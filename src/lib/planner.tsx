@@ -47,7 +47,7 @@ function buildWeek(startsOn: Date): DayPlan[] {
     const meals: PlannedMeal[] = SLOT_ORDER.map((slot) => {
       const pool = RECIPES.filter((r) => r.slots.includes(slot) && !used.has(r.id));
       const pick = pool[(d * 3 + SLOT_ORDER.indexOf(slot) * 5) % Math.max(pool.length, 1)];
-      const chosen = pick ?? RECIPES.filter((r) => r.slots.includes(slot))[0];
+      const chosen = (pick ?? RECIPES.filter((r) => r.slots.includes(slot))[0])!;
       used.add(chosen.id);
       return { slot, recipeId: chosen.id };
     });
@@ -104,7 +104,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       const inUse = new Set(week.flatMap((d) => d.meals.map((m) => m.recipeId)));
       const pool = RECIPES.filter((r) => r.slots.includes(slot) && !inUse.has(r.id));
       const fallback = RECIPES.filter((r) => r.slots.includes(slot));
-      const next = pool.length ? pool[Math.floor(Math.random() * pool.length)] : fallback[Math.floor(Math.random() * fallback.length)];
+      const next = (pool.length ? pool[Math.floor(Math.random() * pool.length)] : fallback[Math.floor(Math.random() * fallback.length)])!;
       assign(date, slot, next.id);
       return next;
     },
@@ -116,13 +116,13 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     const upcoming = SLOT_ORDER.find(
       (s) => hour < { breakfast: 8, lunch: 13, snack: 17, dinner: 20 }[s],
     );
-    const day = week.find((d) => d.date === todayKey) ?? week[0];
+    const day = (week.find((d) => d.date === todayKey) ?? week[0])!;
     if (upcoming) {
       const meal = day.meals.find((m) => m.slot === upcoming)!;
       return { date: day.date, slot: upcoming, recipe: byId(meal.recipeId) };
     }
-    const tomorrow = week[1] ?? week[0];
-    return { date: tomorrow.date, slot: "breakfast" as MealSlot, recipe: byId(tomorrow.meals[0].recipeId) };
+    const tomorrow = (week[1] ?? week[0])!;
+    return { date: tomorrow.date, slot: "breakfast" as MealSlot, recipe: byId(tomorrow.meals[0]!.recipeId) };
   }, [week, todayKey]);
 
   const scaled = useCallback(
