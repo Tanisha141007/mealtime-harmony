@@ -5,7 +5,6 @@ import { BellRing, CheckCircle2, Users } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { MealCard } from "@/components/MealCard";
 import { DishArt } from "@/components/DishArt";
-import { DietDot } from "@/components/DietDot";
 import { usePlanner } from "@/lib/planner";
 import { SLOT_LABEL, SLOT_ORDER, SLOT_TIME, byId } from "@/lib/recipes";
 
