@@ -22,14 +22,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
+      # bun, not npm - this is a Lovable-generated project (bun.lock is
+      # tracked, package-lock.json is gitignored on purpose).
+      - uses: oven-sh/setup-bun@v2
 
-      - run: npm ci
+      - run: bun install --frozen-lockfile
 
       - name: Build
-        run: npm run build
+        run: bun run build
         env:
           # Baked into the client bundle at build time (Vite convention) -
           # not secret: the Supabase anon key is designed to be public
