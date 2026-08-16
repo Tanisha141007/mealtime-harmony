@@ -74,6 +74,7 @@ export type ApiHousehold = {
   notifyMe: boolean;
   notifyMeals: string[];
   sendTime: string;
+  cookMessageSchedule: Record<string, CookScheduleEntry[]>;
   notes: string;
   linkCode: string;
   cookLinked: boolean;
@@ -98,6 +99,14 @@ export type HouseholdInput = {
   notify_me?: boolean;
   notify_meals?: string[];
   send_time?: string;
+  cook_message_schedule?: Record<string, CookScheduleEntry[]>;
+};
+
+export type CookScheduleEntry = {
+  enabled: boolean;
+  time: string;
+  meals: string[];
+  message: string;
 };
 
 export type ApiMeal = {

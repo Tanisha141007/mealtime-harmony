@@ -19,6 +19,7 @@ import {
   type ApiDayPlan,
   type ApiHousehold,
   type ApiRecipe,
+  type CookScheduleEntry,
   type HouseholdInput,
 } from "./api";
 import { useAuth } from "./auth";
@@ -28,6 +29,8 @@ import { SLOT_ORDER, type MealSlot } from "./recipes";
 export type Recipe = ApiRecipe;
 export type PlannedMeal = { slot: MealSlot; recipeId: string; recipe: Recipe };
 export type DayPlan = { date: string; meals: PlannedMeal[] };
+export type DayKey = "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
+export type CookSchedule = Record<DayKey, CookScheduleEntry[]>;
 
 export type Prefs = {
   household: number;
@@ -45,6 +48,7 @@ export type Prefs = {
   notifyMe: boolean;
   notifyMeals: MealSlot[];
   sendTime: string;
+  cookMessageSchedule: CookSchedule;
   notes: string;
   linkCode: string;
   cookLinked: boolean;
@@ -66,10 +70,23 @@ const DEFAULT_PREFS: Prefs = {
   notifyMe: false,
   notifyMeals: ["lunch", "snack", "dinner"],
   sendTime: "07:00",
+  cookMessageSchedule: defaultCookSchedule(),
   notes: "",
   linkCode: "",
   cookLinked: false,
 };
+
+function defaultCookSchedule(): CookSchedule {
+  return {
+    monday: [{ enabled: true, time: "09:00", meals: ["lunch"], message: "" }],
+    tuesday: [{ enabled: true, time: "09:00", meals: ["lunch"], message: "" }],
+    wednesday: [{ enabled: true, time: "09:00", meals: ["lunch"], message: "" }],
+    thursday: [{ enabled: true, time: "09:00", meals: ["lunch"], message: "" }],
+    friday: [{ enabled: true, time: "09:00", meals: ["lunch"], message: "" }],
+    saturday: [{ enabled: true, time: "09:00", meals: ["lunch"], message: "" }],
+    sunday: [{ enabled: true, time: "09:00", meals: ["lunch"], message: "" }],
+  };
+}
 
 export const toKey = (d: Date) => d.toISOString().slice(0, 10);
 
@@ -90,6 +107,7 @@ function apiHouseholdToPrefs(h: ApiHousehold): Prefs {
     notifyMe: h.notifyMe,
     notifyMeals: h.notifyMeals as MealSlot[],
     sendTime: h.sendTime,
+    cookMessageSchedule: { ...defaultCookSchedule(), ...(h.cookMessageSchedule as Partial<CookSchedule>) },
     notes: h.notes,
     linkCode: h.linkCode,
     cookLinked: h.cookLinked,
@@ -112,6 +130,7 @@ function prefsToHouseholdInput(p: Partial<Prefs>): Partial<HouseholdInput> {
   if (p.notifyMe !== undefined) out.notify_me = p.notifyMe;
   if (p.notifyMeals !== undefined) out.notify_meals = p.notifyMeals;
   if (p.sendTime !== undefined) out.send_time = p.sendTime;
+  if (p.cookMessageSchedule !== undefined) out.cook_message_schedule = p.cookMessageSchedule;
   if (p.notes !== undefined) out.notes = p.notes;
   return out;
 }
