@@ -47,4 +47,10 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: .output/server
-          command: deploy
+          wranglerVersion: "4"
+          # Explicit entry point + config, not relying on auto-detection -
+          # the default install (wrangler 3.90) failed to pick up the
+          # generated wrangler.json from workingDirectory on its own
+          # ("Missing entry-point"), so name both directly instead of
+          # debugging that further.
+          command: deploy index.mjs --config wrangler.json
