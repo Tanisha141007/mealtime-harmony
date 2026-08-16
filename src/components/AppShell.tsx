@@ -54,7 +54,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           Sign out
         </button>
         <p className="mt-auto px-3 text-xs leading-relaxed text-muted-foreground">
-          Prototype — meals, cook messages and AI replies are simulated.
+          Live prototype — meal plans, cook messages and AI replies use the backend API.
         </p>
       </aside>
 

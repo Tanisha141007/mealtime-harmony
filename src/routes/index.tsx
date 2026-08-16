@@ -206,7 +206,7 @@ function Planner() {
               <CheckCircle2 className="size-4 shrink-0" />
               <span className="min-w-0 flex-1 truncate">
                 {prefs.cookLinked
-                  ? `${prefs.cookName} linked on ${prefs.channel === "whatsapp" ? "WhatsApp" : "Telegram/SMS"}`
+                  ? `${prefs.cookName} linked for cook updates`
                   : `${prefs.cookName} hasn't linked yet - share code ${prefs.linkCode}`}
               </span>
               <button
