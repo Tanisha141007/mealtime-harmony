@@ -11,13 +11,13 @@ import { askAi, type HouseholdInput } from "@/lib/api";
 export const Route = createFileRoute("/preferences")({
   head: () => ({
     meta: [
-      { title: "Household Preferences — Caspian" },
+      { title: "Household Preferences — ahaar" },
       {
         name: "description",
         content:
           "Set household size, diets, allergies, favourite cuisines and how your cook gets notified.",
       },
-      { property: "og:title", content: "Household Preferences — Caspian" },
+      { property: "og:title", content: "Household Preferences — ahaar" },
       {
         property: "og:description",
         content: "Tune diets, dislikes and cook notification settings for your meal plan.",
@@ -566,7 +566,7 @@ function EditHousehold() {
           </div>
         </Section>
 
-        <Section title="Ask Caspian">
+        <Section title="Ask ahaar">
           <p className="mb-3 text-sm text-muted-foreground">
             Describe what you want in plain language and it folds into your profile.
           </p>

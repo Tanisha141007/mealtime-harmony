@@ -12,13 +12,13 @@ import { SLOT_LABEL, SLOT_ORDER, SLOT_TIME } from "@/lib/recipes";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Caspian — Meal Planner & Cook Coordination" },
+      { title: "ahaar — Meal Planner & Cook Coordination" },
       {
         name: "description",
         content:
           "Plan your household's Indian meals for the week and keep your cook in the loop with dish, ingredients and servings.",
       },
-      { property: "og:title", content: "Caspian — Meal Planner & Cook Coordination" },
+      { property: "og:title", content: "ahaar — Meal Planner & Cook Coordination" },
       {
         property: "og:description",
         content: "A warm weekly meal planner for Indian households, with automatic cook updates.",

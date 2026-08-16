@@ -1,3 +1,4 @@
+import { AhaarWordmark } from "@/components/AhaarLogo";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { CalendarHeart, Compass, LogOut, SlidersHorizontal } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
@@ -29,12 +30,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-background sm:flex">
       {/* Wide screens: left rail */}
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col gap-2 border-r border-border bg-cream px-4 py-8 sm:flex">
-        <div className="mb-6 flex items-center gap-2 px-2">
-          <span className="grid size-9 place-items-center rounded-2xl bg-primary text-lg font-bold text-primary-foreground">
-            C
-          </span>
-          <span className="font-display text-xl font-bold">Caspian</span>
-        </div>
+        <AhaarWordmark className="mb-6 px-2" />
         {TABS.map(({ to, label, icon: Icon }) => (
           <Link
             key={to}
