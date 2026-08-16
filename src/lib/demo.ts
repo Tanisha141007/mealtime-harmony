@@ -48,6 +48,7 @@ export const demoRecipes: Recipe[] = [
       { name: "dosa batter", qty: 1, unit: "cup" },
       { name: "potato masala", qty: 0.75, unit: "cup" },
     ],
+    nutrition: { protein: 6.5, carbs: 58, fat: 9, calories: 340 },
   },
   {
     id: "kerala_sambar_rice",
@@ -65,6 +66,7 @@ export const demoRecipes: Recipe[] = [
       { name: "red rice", qty: 0.5, unit: "cup" },
       { name: "tamarind", qty: 0.5, unit: "tbsp" },
     ],
+    nutrition: { protein: 9, carbs: 62, fat: 5, calories: 330 },
   },
   {
     id: "masala_chai_poha",
@@ -80,6 +82,7 @@ export const demoRecipes: Recipe[] = [
       { name: "poha", qty: 0.5, unit: "cup" },
       { name: "tea", qty: 1, unit: "cup" },
     ],
+    nutrition: { protein: 3.5, carbs: 30, fat: 4, calories: 175 },
   },
   {
     id: "palak_paneer_phulka",
@@ -96,6 +99,7 @@ export const demoRecipes: Recipe[] = [
       { name: "spinach", qty: 1.5, unit: "cup" },
       { name: "phulka", qty: 2, unit: "pc" },
     ],
+    nutrition: { protein: 22, carbs: 40, fat: 24, calories: 460 },
   },
   {
     id: "appam_stew",
@@ -111,6 +115,7 @@ export const demoRecipes: Recipe[] = [
       { name: "appam batter", qty: 1, unit: "cup" },
       { name: "vegetable stew", qty: 1, unit: "cup" },
     ],
+    nutrition: { protein: 7, carbs: 48, fat: 10, calories: 320 },
   },
   {
     id: "moong_chilla",
@@ -126,6 +131,7 @@ export const demoRecipes: Recipe[] = [
       { name: "moong dal", qty: 0.5, unit: "cup" },
       { name: "ginger", qty: 0.5, unit: "tsp" },
     ],
+    nutrition: { protein: 14, carbs: 32, fat: 3, calories: 210 },
   },
   {
     id: "avial",
@@ -141,6 +147,7 @@ export const demoRecipes: Recipe[] = [
       { name: "mixed vegetables", qty: 1.25, unit: "cup" },
       { name: "coconut", qty: 0.25, unit: "cup" },
     ],
+    nutrition: { protein: 4, carbs: 18, fat: 12, calories: 190 },
   },
 ];
 
