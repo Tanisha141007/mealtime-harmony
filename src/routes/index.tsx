@@ -95,7 +95,7 @@ function Planner() {
     const interval = setInterval(() => {
       setGenerateProgress((prev) => {
         if (prev >= 90) return prev;
-        return prev + Math.random() * 12;
+        return Math.min(prev + Math.random() * 12, 90);
       });
     }, 180);
     try {
