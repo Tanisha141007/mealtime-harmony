@@ -67,7 +67,10 @@ function Planner() {
             Head to Preferences to tell us about your household - diet, allergies, cook's details -
             before planning a week.
           </p>
-          <Link to="/preferences" className="mt-4 inline-block rounded-2xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground">
+          <Link
+            to="/preferences"
+            className="mt-4 inline-block rounded-2xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground"
+          >
             Go to Preferences
           </Link>
         </div>
@@ -82,9 +85,12 @@ function Planner() {
     setSwapping(slot);
     try {
       const next = await swap(day!.date, slot);
-      if (next) toast.success(`Swapped ${SLOT_LABEL[slot].toLowerCase()}`, { description: next.name });
+      if (next)
+        toast.success(`Swapped ${SLOT_LABEL[slot].toLowerCase()}`, { description: next.name });
     } catch (e) {
-      toast.error("Couldn't swap that meal", { description: e instanceof Error ? e.message : undefined });
+      toast.error("Couldn't swap that meal", {
+        description: e instanceof Error ? e.message : undefined,
+      });
     } finally {
       setSwapping(null);
     }
@@ -103,7 +109,9 @@ function Planner() {
       setGenerateProgress(100);
       toast.success("This week's plan is ready");
     } catch (e) {
-      toast.error("Couldn't generate a plan", { description: e instanceof Error ? e.message : undefined });
+      toast.error("Couldn't generate a plan", {
+        description: e instanceof Error ? e.message : undefined,
+      });
     } finally {
       clearInterval(interval);
       setTimeout(() => setGenerateProgress(0), 400);
@@ -152,7 +160,9 @@ function Planner() {
           {generatingWeek && (
             <div className="mt-4">
               <Progress value={generateProgress} className="h-2.5 rounded-full bg-primary/15" />
-              <p className="mt-2 text-xs font-medium text-muted-foreground">Curating your week of meals...</p>
+              <p className="mt-2 text-xs font-medium text-muted-foreground">
+                Curating your week of meals...
+              </p>
             </div>
           )}
         </div>
@@ -184,7 +194,12 @@ function Planner() {
                     ))}
                 </div>
               </div>
-              <DishArt art={hero.art} alt={hero.name} priority className="size-24 shrink-0 sm:size-28" />
+              <DishArt
+                art={hero.art}
+                alt={hero.name}
+                priority
+                className="size-24 shrink-0 sm:size-28"
+              />
             </div>
 
             <div className="relative mt-5 flex items-center gap-2 rounded-2xl bg-primary-foreground/16 px-3.5 py-3 text-sm font-semibold">
@@ -226,7 +241,9 @@ function Planner() {
                       {date.toLocaleDateString("en-IN", { weekday: "short" })}
                     </span>
                     <span className="font-display text-xl font-bold">{date.getDate()}</span>
-                    {d.date === today && <span className="size-1.5 rounded-full bg-current opacity-70" />}
+                    {d.date === today && (
+                      <span className="size-1.5 rounded-full bg-current opacity-70" />
+                    )}
                   </button>
                 );
               })}
