@@ -34,12 +34,7 @@ function Login() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-5">
       <div className="soft-card w-full max-w-sm p-6">
-        <div className="mb-5 flex items-center gap-2">
-          <span className="grid size-9 place-items-center rounded-2xl bg-primary text-lg font-bold text-primary-foreground">
-            C
-          </span>
-          <span className="font-display text-xl font-bold">Caspian</span>
-        </div>
+        <AhaarWordmark className="mb-5" />
 
         {sent ? (
           <>
