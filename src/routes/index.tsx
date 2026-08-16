@@ -43,7 +43,6 @@ function Planner() {
     swap,
     nextMeal,
     prefs,
-    scaledNutrition,
     generateWeek,
     generatingWeek,
   } = usePlanner();
@@ -138,10 +137,21 @@ function Planner() {
       return;
     }
     if (!householdId) return;
+    // Sends whichever single meal is shown as "Next up" in the hero card
+    // above (nextMeal - same logic, so this always matches what's on
+    // screen): if it's 8pm and dinner's still ahead, that's dinner, not
+    // tomorrow's breakfast; once dinner's cutoff passes, it rolls to
+    // tomorrow's first meal automatically.
+    if (!nextMeal) {
+      toast.error("No upcoming meal to notify about", { description: "Generate a plan first." });
+      return;
+    }
     setNotifying(true);
     try {
-      await notifyCook(householdId);
-      toast.success(`${prefs.cookName} notified`);
+      await notifyCook(householdId, nextMeal.date, nextMeal.slot);
+      toast.success(`${prefs.cookName} notified`, {
+        description: `Sent ${SLOT_LABEL[nextMeal.slot].toLowerCase()}${nextMeal.date === today ? "" : " (tomorrow)"}.`,
+      });
     } catch (e) {
       toast.error("Couldn't send it", { description: e instanceof Error ? e.message : undefined });
     } finally {
@@ -200,27 +210,20 @@ function Planner() {
                   {hero.region} · {hero.minutes} min · {prefs.household} servings
                 </p>
                 <div className="mt-3 flex flex-wrap gap-1.5">
-                  {(() => {
-                    const n = scaledNutrition(hero);
-                    return (
-                      <>
-                        <span className="rounded-full bg-primary-foreground/18 px-2.5 py-1 text-xs font-semibold">
-                          Protein {n.protein}g
-                        </span>
-                        <span className="rounded-full bg-primary-foreground/18 px-2.5 py-1 text-xs font-semibold">
-                          Carbs {n.carbs}g
-                        </span>
-                        <span className="rounded-full bg-primary-foreground/18 px-2.5 py-1 text-xs font-semibold">
-                          Fat {n.fat}g
-                        </span>
-                        <span className="rounded-full bg-primary-foreground/18 px-2.5 py-1 text-xs font-semibold">
-                          {n.calories} kcal
-                        </span>
-                      </>
-                    );
-                  })()}
+                  <span className="rounded-full bg-primary-foreground/18 px-2.5 py-1 text-xs font-semibold">
+                    Protein {hero.nutrition.protein}g
+                  </span>
+                  <span className="rounded-full bg-primary-foreground/18 px-2.5 py-1 text-xs font-semibold">
+                    Carbs {hero.nutrition.carbs}g
+                  </span>
+                  <span className="rounded-full bg-primary-foreground/18 px-2.5 py-1 text-xs font-semibold">
+                    Fat {hero.nutrition.fat}g
+                  </span>
+                  <span className="rounded-full bg-primary-foreground/18 px-2.5 py-1 text-xs font-semibold">
+                    {hero.nutrition.calories} kcal
+                  </span>
                 </div>
-                <p className="mt-1.5 text-[11px] font-medium opacity-70">Estimated, for {prefs.household} servings</p>
+                <p className="mt-1.5 text-[11px] font-medium opacity-70">Estimated, per person</p>
               </div>
               <DishArt
                 art={hero.art}

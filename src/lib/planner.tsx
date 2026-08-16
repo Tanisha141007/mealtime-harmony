@@ -158,7 +158,6 @@ type Ctx = {
 
   nextMeal: { date: string; slot: MealSlot; recipe: Recipe } | null;
   scaled: (r: Recipe) => { name: string; qty: number; unit: string }[];
-  scaledNutrition: (r: Recipe) => Recipe["nutrition"];
 };
 
 const PlannerContext = createContext<Ctx | null>(null);
@@ -320,17 +319,9 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     [prefs.household],
   );
 
-  // recipe.nutrition is per-serving (see app/nutrition.py) - same
-  // household-size scaling convention as scaled() above.
-  const scaledNutrition = useCallback(
-    (r: Recipe) => ({
-      protein: Math.round(r.nutrition.protein * prefs.household * 10) / 10,
-      carbs: Math.round(r.nutrition.carbs * prefs.household * 10) / 10,
-      fat: Math.round(r.nutrition.fat * prefs.household * 10) / 10,
-      calories: Math.round(r.nutrition.calories * prefs.household),
-    }),
-    [prefs.household],
-  );
+  // recipe.nutrition is already per-serving/per-person (see app/nutrition.py)
+  // - unlike ingredients, this is shown as-is, not scaled by household size:
+  // "how much protein is in a serving" doesn't multiply by headcount.
 
   const value: Ctx = {
     householdId,
@@ -355,7 +346,6 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
 
     nextMeal,
     scaled,
-    scaledNutrition,
   };
 
   return <PlannerContext.Provider value={value}>{children}</PlannerContext.Provider>;

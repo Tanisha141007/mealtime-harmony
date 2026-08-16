@@ -198,8 +198,8 @@ export const askAi = (householdId: number, message: string) =>
 
 // ---- Notify cook ----
 
-export const notifyCook = (householdId: number, date?: string) =>
+export const notifyCook = (householdId: number, date?: string, slot?: string) =>
   request<{ sent: boolean; message_preview: string }>(`/api/households/${householdId}/notify-cook`, {
     method: "POST",
-    body: JSON.stringify({ date: date ?? null }),
+    body: JSON.stringify({ date: date ?? null, slot: slot ?? null }),
   });
