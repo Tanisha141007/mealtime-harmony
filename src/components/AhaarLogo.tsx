@@ -7,7 +7,7 @@ type Props = { className?: string };
 export function AhaarMark({ className = "size-9" }: Props) {
   return (
     <svg viewBox="0 0 64 64" role="img" aria-label="Ahaar" className={className}>
-      <rect width="64" height="64" rx="18" fill="#8CC220" />
+      <rect width="64" height="64" rx="14" fill="#8CC220" />
       <path
         d="M14 34h36a18 18 0 0 1-36 0Z"
         fill="#FB9435"
