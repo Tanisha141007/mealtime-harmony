@@ -149,6 +149,12 @@ function Planner() {
           >
             {generatingWeek ? "Generating..." : "Generate this week's plan"}
           </button>
+          {generatingWeek && (
+            <div className="mt-4">
+              <Progress value={generateProgress} className="h-2.5 rounded-full bg-primary/15" />
+              <p className="mt-2 text-xs font-medium text-muted-foreground">Curating your week of meals...</p>
+            </div>
+          )}
         </div>
       ) : (
         <>
