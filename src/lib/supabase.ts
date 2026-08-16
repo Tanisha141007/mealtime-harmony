@@ -11,4 +11,18 @@ if (!url || !anonKey) {
   );
 }
 
-export const supabase = createClient(url ?? "", anonKey ?? "");
+// Fall back to a syntactically valid placeholder so the app (a visual
+// prototype without a backend yet) still boots; auth calls simply fail.
+export const isSupabaseConfigured = Boolean(url && anonKey);
+
+export const supabase = createClient(
+  url || "https://placeholder.supabase.co",
+  anonKey || "public-anon-key-placeholder",
+  {
+    auth: {
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      persistSession: true,
+    },
+  },
+);

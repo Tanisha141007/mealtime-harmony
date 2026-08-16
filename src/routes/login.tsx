@@ -1,5 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { AhaarWordmark } from "@/components/AhaarLogo";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Mail, MailCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -7,17 +8,24 @@ import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
-    meta: [{ title: "Sign in — Caspian" }],
+    meta: [{ title: "Sign in — ahaar" }],
   }),
   component: Login,
 });
 
 function Login() {
-  const { sendMagicLink } = useAuth();
+  const { loading, session, sendMagicLink } = useAuth();
+  const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!loading && session) {
+      navigate({ to: "/", replace: true });
+    }
+  }, [loading, navigate, session]);
 
   const submit = async () => {
     if (!email.trim()) return;
@@ -31,15 +39,14 @@ function Login() {
     setSent(true);
   };
 
+  if (loading || session) {
+    return <div className="min-h-screen bg-background" />;
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-5">
       <div className="soft-card w-full max-w-sm p-6">
-        <div className="mb-5 flex items-center gap-2">
-          <span className="grid size-9 place-items-center rounded-2xl bg-primary text-lg font-bold text-primary-foreground">
-            C
-          </span>
-          <span className="font-display text-xl font-bold">Caspian</span>
-        </div>
+        <AhaarWordmark className="mb-5" />
 
         {sent ? (
           <>

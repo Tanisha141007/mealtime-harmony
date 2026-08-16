@@ -1,6 +1,6 @@
 # Mealtime Harmony
 
-making a meal planner and cook coordination app, make a well designed prototype for this platform. Use headspace and groodles as reference for the design language
+A meal planner and cook coordination app.
 
 This project was built with [Lovable](https://lovable.dev).
 
