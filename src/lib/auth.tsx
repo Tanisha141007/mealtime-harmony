@@ -62,7 +62,7 @@ export function useAuth() {
   return ctx;
 }
 
-/** M4 will use this to attach the bearer token to every API call. */
+/** Access token used by src/lib/api.ts for authenticated backend calls. */
 export function useAccessToken() {
   const { session } = useAuth();
   return session?.access_token ?? null;
