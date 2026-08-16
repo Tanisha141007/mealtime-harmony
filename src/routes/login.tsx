@@ -1,6 +1,6 @@
 import { AhaarWordmark } from "@/components/AhaarLogo";
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Mail, MailCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -14,11 +14,18 @@ export const Route = createFileRoute("/login")({
 });
 
 function Login() {
-  const { sendMagicLink } = useAuth();
+  const { loading, session, sendMagicLink } = useAuth();
+  const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!loading && session) {
+      navigate({ to: "/", replace: true });
+    }
+  }, [loading, navigate, session]);
 
   const submit = async () => {
     if (!email.trim()) return;
@@ -31,6 +38,10 @@ function Login() {
     }
     setSent(true);
   };
+
+  if (loading || session) {
+    return <div className="min-h-screen bg-background" />;
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-5">

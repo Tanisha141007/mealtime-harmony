@@ -18,4 +18,11 @@ export const isSupabaseConfigured = Boolean(url && anonKey);
 export const supabase = createClient(
   url || "https://placeholder.supabase.co",
   anonKey || "public-anon-key-placeholder",
+  {
+    auth: {
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      persistSession: true,
+    },
+  },
 );
