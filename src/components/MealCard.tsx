@@ -1,7 +1,8 @@
 import { Clock, RefreshCw } from "lucide-react";
 import { DishArt } from "./DishArt";
 import { DietDot } from "./DietDot";
-import { SLOT_LABEL, SLOT_TIME, type MealSlot, type Recipe } from "@/lib/recipes";
+import { SLOT_LABEL, SLOT_TIME, type MealSlot } from "@/lib/recipes";
+import type { Recipe } from "@/lib/planner";
 
 export function MealCard({
   slot,

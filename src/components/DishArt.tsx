@@ -2,7 +2,7 @@ import curry from "@/assets/dish-curry.png";
 import dosa from "@/assets/dish-dosa.png";
 import thali from "@/assets/dish-thali.png";
 import chai from "@/assets/dish-chai.png";
-import type { Art } from "@/lib/recipes";
+import type { ApiArt as Art } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 const SRC: Record<Art, string> = { curry, dosa, thali, chai };

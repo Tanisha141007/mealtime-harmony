@@ -6,15 +6,34 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { RECIPES, SLOT_ORDER, byId, type MealSlot, type Recipe } from "./recipes";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  ApiError,
+  assignMeal,
+  createHousehold as apiCreateHousehold,
+  generateWeek as apiGenerateWeek,
+  getMyHousehold,
+  getWeek,
+  swapMeal,
+  updateHousehold as apiUpdateHousehold,
+  type ApiDayPlan,
+  type ApiHousehold,
+  type ApiRecipe,
+  type HouseholdInput,
+} from "./api";
+import { useAuth } from "./auth";
+import { SLOT_ORDER, type MealSlot } from "./recipes";
 
-export type PlannedMeal = { slot: MealSlot; recipeId: string };
+export type Recipe = ApiRecipe;
+export type PlannedMeal = { slot: MealSlot; recipeId: string; recipe: Recipe };
 export type DayPlan = { date: string; meals: PlannedMeal[] };
 
 export type Prefs = {
   household: number;
   location: string;
-  diets: string[];
+  city: string;
+  state: string;
+  dietType: string;
   dislikes: string[];
   allergies: string[];
   cuisines: string[];
@@ -22,107 +41,200 @@ export type Prefs = {
   cookPhone: string;
   channel: "whatsapp" | "sms";
   leadHours: number;
+  notes: string;
+  linkCode: string;
+  cookLinked: boolean;
 };
 
 const DEFAULT_PREFS: Prefs = {
   household: 4,
-  location: "Kochi, Kerala",
-  diets: ["Vegetarian-leaning", "High protein"],
-  dislikes: ["Bitter gourd", "Raw onion"],
-  allergies: ["Peanuts"],
-  cuisines: ["Kerala", "Tamil Nadu", "Punjab"],
-  cookName: "Lakshmi",
-  cookPhone: "+91 98470 33121",
-  channel: "whatsapp",
+  location: "",
+  city: "",
+  state: "",
+  dietType: "veg",
+  dislikes: [],
+  allergies: [],
+  cuisines: [],
+  cookName: "",
+  cookPhone: "",
+  channel: "sms",
   leadHours: 12,
+  notes: "",
+  linkCode: "",
+  cookLinked: false,
 };
-
-/** Deterministic, repetition-free week built from the recipe dataset. */
-function buildWeek(startsOn: Date): DayPlan[] {
-  const used = new Set<string>();
-  const days: DayPlan[] = [];
-  for (let d = 0; d < 7; d++) {
-    const date = new Date(startsOn);
-    date.setDate(startsOn.getDate() + d);
-    const meals: PlannedMeal[] = SLOT_ORDER.map((slot) => {
-      const pool = RECIPES.filter((r) => r.slots.includes(slot) && !used.has(r.id));
-      const pick = pool[(d * 3 + SLOT_ORDER.indexOf(slot) * 5) % Math.max(pool.length, 1)];
-      const chosen = (pick ?? RECIPES.filter((r) => r.slots.includes(slot))[0])!;
-      used.add(chosen.id);
-      return { slot, recipeId: chosen.id };
-    });
-    days.push({ date: toKey(date), meals });
-  }
-  return days;
-}
 
 export const toKey = (d: Date) => d.toISOString().slice(0, 10);
 
+function apiHouseholdToPrefs(h: ApiHousehold): Prefs {
+  return {
+    household: h.household,
+    location: h.location,
+    city: h.city,
+    state: h.state,
+    dietType: h.dietType,
+    dislikes: h.dislikes,
+    allergies: h.allergies,
+    cuisines: h.cuisines,
+    cookName: h.cookName,
+    cookPhone: h.cookPhone,
+    channel: h.channel,
+    leadHours: h.leadHours,
+    notes: h.notes,
+    linkCode: h.linkCode,
+    cookLinked: h.cookLinked,
+  };
+}
+
+function prefsToHouseholdInput(p: Partial<Prefs>): Partial<HouseholdInput> {
+  const out: Partial<HouseholdInput> = {};
+  if (p.household !== undefined) out.family_size = p.household;
+  if (p.city !== undefined) out.city = p.city;
+  if (p.state !== undefined) out.state = p.state;
+  if (p.dietType !== undefined) out.diet_type = p.dietType;
+  if (p.dislikes !== undefined) out.disliked_ingredients = p.dislikes;
+  if (p.allergies !== undefined) out.allergies = p.allergies;
+  if (p.cuisines !== undefined) out.preferred_cuisines = p.cuisines;
+  if (p.cookName !== undefined) out.cook_name = p.cookName;
+  if (p.cookPhone !== undefined) out.cook_phone = p.cookPhone;
+  if (p.channel !== undefined) out.preferred_channel = p.channel;
+  if (p.leadHours !== undefined) out.lead_hours = p.leadHours;
+  if (p.notes !== undefined) out.notes = p.notes;
+  return out;
+}
+
 type Ctx = {
+  householdId: number | null;
+  hasHousehold: boolean;
+  loadingHousehold: boolean;
   prefs: Prefs;
   setPrefs: (p: Partial<Prefs>) => void;
+  createHousehold: (input: HouseholdInput) => Promise<void>;
+  creatingHousehold: boolean;
+
   week: DayPlan[];
+  loadingWeek: boolean;
   today: string;
   selected: string;
   setSelected: (d: string) => void;
-  swap: (date: string, slot: MealSlot) => Recipe;
-  assign: (date: string, slot: MealSlot, recipeId: string) => void;
-  nextMeal: { date: string; slot: MealSlot; recipe: Recipe };
+
+  generateWeek: () => Promise<void>;
+  generatingWeek: boolean;
+
+  swap: (date: string, slot: MealSlot) => Promise<Recipe | null>;
+  assign: (date: string, slot: MealSlot, recipeId: string) => Promise<void>;
+
+  nextMeal: { date: string; slot: MealSlot; recipe: Recipe } | null;
   scaled: (r: Recipe) => { name: string; qty: number; unit: string }[];
 };
 
 const PlannerContext = createContext<Ctx | null>(null);
 
 export function PlannerProvider({ children }: { children: ReactNode }) {
-  const start = useMemo(() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
-  }, []);
-  const todayKey = toKey(start);
-
-  const [prefs, setPrefsState] = useState<Prefs>(DEFAULT_PREFS);
-  const [week, setWeek] = useState<DayPlan[]>(() => buildWeek(start));
+  const { session } = useAuth();
+  const queryClient = useQueryClient();
+  const todayKey = useMemo(() => toKey(new Date()), []);
   const [selected, setSelected] = useState(todayKey);
 
-  const setPrefs = useCallback((p: Partial<Prefs>) => {
-    setPrefsState((prev) => ({ ...prev, ...p }));
-  }, []);
+  const isAuthed = !!session;
 
-  const assign = useCallback((date: string, slot: MealSlot, recipeId: string) => {
-    setWeek((prev) =>
-      prev.map((day) =>
-        day.date === date
-          ? { ...day, meals: day.meals.map((m) => (m.slot === slot ? { ...m, recipeId } : m)) }
-          : day,
-      ),
-    );
-  }, []);
+  const householdQuery = useQuery({
+    queryKey: ["household", "me"],
+    queryFn: getMyHousehold,
+    enabled: isAuthed,
+    retry: (failureCount, error) => (error instanceof ApiError && error.status === 404 ? false : failureCount < 2),
+  });
 
-  const swap = useCallback(
-    (date: string, slot: MealSlot) => {
-      const inUse = new Set(week.flatMap((d) => d.meals.map((m) => m.recipeId)));
-      const pool = RECIPES.filter((r) => r.slots.includes(slot) && !inUse.has(r.id));
-      const fallback = RECIPES.filter((r) => r.slots.includes(slot));
-      const next = (pool.length ? pool[Math.floor(Math.random() * pool.length)] : fallback[Math.floor(Math.random() * fallback.length)])!;
-      assign(date, slot, next.id);
-      return next;
+  const hasHousehold = householdQuery.isSuccess && !!householdQuery.data;
+  const household = householdQuery.data ?? null;
+  const householdId = household?.id ?? null;
+  const prefs = household ? apiHouseholdToPrefs(household) : DEFAULT_PREFS;
+
+  const weekQuery = useQuery({
+    queryKey: ["week", householdId],
+    queryFn: () => getWeek(householdId as number),
+    enabled: !!householdId,
+  });
+  const week: DayPlan[] = (weekQuery.data ?? []).map((d: ApiDayPlan) => ({
+    date: d.date,
+    meals: d.meals.map((m) => ({ slot: m.slot as MealSlot, recipeId: m.recipeId, recipe: m.recipe })),
+  }));
+
+  const invalidateWeek = () => queryClient.invalidateQueries({ queryKey: ["week", householdId] });
+
+  const createMutation = useMutation({
+    mutationFn: (input: HouseholdInput) => apiCreateHousehold(input),
+    onSuccess: (h) => queryClient.setQueryData(["household", "me"], h),
+  });
+  const createHousehold = useCallback(
+    async (input: HouseholdInput) => {
+      await createMutation.mutateAsync(input);
     },
-    [week, assign],
+    [createMutation],
+  );
+
+  const updateMutation = useMutation({
+    mutationFn: (patch: Partial<Prefs>) => apiUpdateHousehold(householdId as number, prefsToHouseholdInput(patch)),
+    onSuccess: (h) => queryClient.setQueryData(["household", "me"], h),
+  });
+  const setPrefs = useCallback(
+    (patch: Partial<Prefs>) => {
+      if (!householdId) return;
+      updateMutation.mutate(patch);
+    },
+    [householdId, updateMutation],
+  );
+
+  const generateMutation = useMutation({
+    mutationFn: () => apiGenerateWeek(householdId as number),
+    onSuccess: (days) => queryClient.setQueryData(["week", householdId], days),
+  });
+  const generateWeek = useCallback(async () => {
+    if (!householdId) return;
+    await generateMutation.mutateAsync();
+  }, [householdId, generateMutation]);
+
+  const assignMutation = useMutation({
+    mutationFn: ({ date, slot, recipeId }: { date: string; slot: MealSlot; recipeId: string }) =>
+      assignMeal(householdId as number, date, slot, recipeId),
+    onSuccess: invalidateWeek,
+  });
+  const assign = useCallback(
+    async (date: string, slot: MealSlot, recipeId: string) => {
+      if (!householdId) return;
+      await assignMutation.mutateAsync({ date, slot, recipeId });
+    },
+    [householdId, assignMutation],
+  );
+
+  const swapMutation = useMutation({
+    mutationFn: ({ date, slot }: { date: string; slot: MealSlot }) => swapMeal(householdId as number, date, slot),
+    onSuccess: invalidateWeek,
+  });
+  const swap = useCallback(
+    async (date: string, slot: MealSlot) => {
+      if (!householdId) return null;
+      const result = await swapMutation.mutateAsync({ date, slot });
+      const meal = result.meals.find((m) => m.slot === slot);
+      return meal?.recipe ?? null;
+    },
+    [householdId, swapMutation],
   );
 
   const nextMeal = useMemo(() => {
     const hour = new Date().getHours();
     const upcoming = SLOT_ORDER.find(
-      (s) => hour < { breakfast: 8, lunch: 13, snack: 17, dinner: 20 }[s],
+      (s) => hour < ({ breakfast: 8, lunch: 13, snack: 17, dinner: 20 } as Record<MealSlot, number>)[s],
     );
-    const day = (week.find((d) => d.date === todayKey) ?? week[0])!;
+    const day = week.find((d) => d.date === todayKey) ?? week[0];
+    if (!day) return null;
     if (upcoming) {
-      const meal = day.meals.find((m) => m.slot === upcoming)!;
-      return { date: day.date, slot: upcoming, recipe: byId(meal.recipeId) };
+      const meal = day.meals.find((m) => m.slot === upcoming);
+      return meal ? { date: day.date, slot: upcoming, recipe: meal.recipe } : null;
     }
-    const tomorrow = (week[1] ?? week[0])!;
-    return { date: tomorrow.date, slot: "breakfast" as MealSlot, recipe: byId(tomorrow.meals[0]!.recipeId) };
+    const tomorrow = week[1] ?? week[0];
+    const meal = tomorrow?.meals[0];
+    return meal ? { date: tomorrow.date, slot: meal.slot, recipe: meal.recipe } : null;
   }, [week, todayKey]);
 
   const scaled = useCallback(
@@ -131,14 +243,26 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   );
 
   const value: Ctx = {
+    householdId,
+    hasHousehold,
+    loadingHousehold: householdQuery.isLoading,
     prefs,
     setPrefs,
+    createHousehold,
+    creatingHousehold: createMutation.isPending,
+
     week,
+    loadingWeek: weekQuery.isLoading,
     today: todayKey,
     selected,
     setSelected,
+
+    generateWeek,
+    generatingWeek: generateMutation.isPending,
+
     swap,
     assign,
+
     nextMeal,
     scaled,
   };
