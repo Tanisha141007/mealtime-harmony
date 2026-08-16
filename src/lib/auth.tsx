@@ -69,6 +69,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       provider: "google",
       options: {
         redirectTo: window.location.origin,
+        // Without this, Google silently re-authenticates whatever Google
+        // account is already logged into the browser (its own session
+        // cookie, separate from ours) instead of showing the account
+        // picker - so signing out of the app and back in again looked
+        // like it skipped straight past login instead of asking which
+        // account to use.
+        queryParams: { prompt: "select_account" },
       },
     });
     return { error: error?.message ?? null };

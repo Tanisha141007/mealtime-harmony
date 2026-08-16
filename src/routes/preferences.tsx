@@ -508,7 +508,15 @@ function EditHousehold() {
             <>
               <p className="text-sm text-muted-foreground">
                 {prefs.cookName || "Your cook"} hasn't linked yet. Open{" "}
-                <span className="font-bold">t.me/ahaara_bot</span> on Telegram and send this code:
+                <a
+                  href="https://t.me/ahaara_bot"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-bold text-primary underline underline-offset-2"
+                >
+                  @ahaara_bot
+                </a>{" "}
+                on Telegram and send this code:
               </p>
               <div className="mt-3 flex items-center justify-between rounded-2xl bg-cream px-4 py-3">
                 <span className="font-display text-2xl font-bold tracking-widest">{prefs.linkCode}</span>
@@ -836,8 +844,16 @@ function EditHousehold() {
               ) : (
                 <>
                   <p className="text-sm text-muted-foreground">
-                    Ask {prefs.cookName || "your cook"} to open <span className="font-bold">t.me/ahaara_bot</span> on
-                    Telegram and send this code:
+                    Ask {prefs.cookName || "your cook"} to open{" "}
+                    <a
+                      href="https://t.me/ahaara_bot"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-bold text-primary underline underline-offset-2"
+                    >
+                      @ahaara_bot
+                    </a>{" "}
+                    on Telegram and send this code:
                   </p>
                   <div className="mt-3 flex items-center justify-between rounded-2xl bg-cream px-4 py-3">
                     <span className="font-display text-2xl font-bold tracking-widest">{prefs.linkCode}</span>
