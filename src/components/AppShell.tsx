@@ -25,8 +25,24 @@ export function AppShell({ children }: { children: ReactNode }) {
     return <div className="min-h-screen bg-background" />;
   }
 
+  const handleSignOut = () => {
+    signOut();
+    navigate({ to: "/login" });
+  };
+
   return (
     <div className="min-h-screen bg-background sm:flex">
+      {/* Mobile: the left rail below is hidden entirely (sm:flex), so this
+          is the only way to sign out below the sm breakpoint. Floating
+          top-right to stay clear of the bottom tab bar. */}
+      <button
+        onClick={handleSignOut}
+        aria-label="Sign out"
+        className="fixed right-4 top-4 z-40 grid size-10 place-items-center rounded-full border border-border bg-card/95 text-muted-foreground shadow-[0_8px_24px_-12px_oklch(0.29_0.045_52/0.55)] backdrop-blur sm:hidden"
+      >
+        <LogOut className="size-5" />
+      </button>
+
       {/* Wide screens: left rail */}
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col gap-2 border-r border-border bg-cream px-4 py-8 sm:flex">
         <div className="mb-6 flex items-center gap-2 px-2">
@@ -48,10 +64,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Link>
         ))}
         <button
-          onClick={() => {
-            signOut();
-            navigate({ to: "/login" });
-          }}
+          onClick={handleSignOut}
           className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary"
         >
           <LogOut className="size-5" />
