@@ -1,3 +1,4 @@
+import { AhaarWordmark } from "@/components/AhaarLogo";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { CalendarHeart, Compass, LogOut, SlidersHorizontal } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
