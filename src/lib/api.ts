@@ -71,6 +71,9 @@ export type ApiHousehold = {
   cookPhone: string;
   channel: "sms" | "whatsapp";
   leadHours: number;
+  notifyMe: boolean;
+  notifyMeals: string[];
+  sendTime: string;
   notes: string;
   linkCode: string;
   cookLinked: boolean;
@@ -92,6 +95,9 @@ export type HouseholdInput = {
   notes?: string;
   preferred_channel?: string;
   lead_hours?: number;
+  notify_me?: boolean;
+  notify_meals?: string[];
+  send_time?: string;
 };
 
 export type ApiMeal = {
@@ -119,6 +125,9 @@ export const createHousehold = (body: HouseholdInput) =>
 
 export const updateHousehold = (id: number, body: Partial<HouseholdInput>) =>
   request<ApiHousehold>(`/api/households/${id}`, { method: "PATCH", body: JSON.stringify(body) });
+
+export const sendWelcomeEmail = () =>
+  request<{ sent: boolean; alreadySent: boolean }>("/api/auth/welcome", { method: "POST" });
 
 // ---- Plan ----
 

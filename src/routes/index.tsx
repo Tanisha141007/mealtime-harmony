@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { BellRing, CheckCircle2, Sparkles, Users } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
@@ -8,6 +8,7 @@ import { DishArt } from "@/components/DishArt";
 import { Progress } from "@/components/ui/progress";
 import { usePlanner } from "@/lib/planner";
 import { notifyCook } from "@/lib/api";
+import { DEMO_MODE } from "@/lib/demo";
 import { SLOT_LABEL, SLOT_ORDER, SLOT_TIME } from "@/lib/recipes";
 
 export const Route = createFileRoute("/")({
@@ -48,7 +49,21 @@ function Planner() {
   } = usePlanner();
   const [swapping, setSwapping] = useState<string | null>(null);
   const [notifying, setNotifying] = useState(false);
+  const [showGenerateProgress, setShowGenerateProgress] = useState(false);
   const [generateProgress, setGenerateProgress] = useState(0);
+
+  useEffect(() => {
+    if (!showGenerateProgress) return;
+
+    const timer = window.setInterval(() => {
+      setGenerateProgress((current) => {
+        if (current >= 92) return current;
+        return Math.min(current + (current < 55 ? 9 : 4), 92);
+      });
+    }, 180);
+
+    return () => window.clearInterval(timer);
+  }, [showGenerateProgress]);
 
   if (loadingHousehold) {
     return (
@@ -97,28 +112,31 @@ function Planner() {
   };
 
   const handleGenerate = async () => {
-    setGenerateProgress(0);
-    const interval = setInterval(() => {
-      setGenerateProgress((prev) => {
-        if (prev >= 90) return prev;
-        return Math.min(prev + Math.random() * 12, 90);
-      });
-    }, 180);
+    setShowGenerateProgress(true);
+    setGenerateProgress(8);
     try {
-      await generateWeek();
+      await Promise.all([
+        generateWeek(),
+        new Promise((resolve) => window.setTimeout(resolve, 1200)),
+      ]);
       setGenerateProgress(100);
+      await new Promise((resolve) => window.setTimeout(resolve, 250));
       toast.success("This week's plan is ready");
     } catch (e) {
-      toast.error("Couldn't generate a plan", {
-        description: e instanceof Error ? e.message : undefined,
-      });
+      toast.error("Couldn't generate a plan", { description: e instanceof Error ? e.message : undefined });
+      setGenerateProgress(0);
     } finally {
-      clearInterval(interval);
-      setTimeout(() => setGenerateProgress(0), 400);
+      setShowGenerateProgress(false);
     }
   };
 
   const handleNotify = async () => {
+    if (DEMO_MODE) {
+      toast.success(`${prefs.cookName} notified`, {
+        description: "Demo mode: no backend message was sent.",
+      });
+      return;
+    }
     if (!householdId) return;
     setNotifying(true);
     try {
@@ -152,17 +170,18 @@ function Planner() {
           </p>
           <button
             onClick={handleGenerate}
-            disabled={generatingWeek}
+            disabled={showGenerateProgress || generatingWeek}
             className="mt-4 rounded-2xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-60"
           >
-            {generatingWeek ? "Generating..." : "Generate this week's plan"}
+            {showGenerateProgress || generatingWeek ? "Generating..." : "Generate weekly plan"}
           </button>
-          {generatingWeek && (
-            <div className="mt-4">
-              <Progress value={generateProgress} className="h-2.5 rounded-full bg-primary/15" />
-              <p className="mt-2 text-xs font-medium text-muted-foreground">
-                Curating your week of meals...
-              </p>
+          {showGenerateProgress && (
+            <div className="mx-auto mt-5 max-w-xs text-left">
+              <Progress value={generateProgress} className="h-2.5 bg-secondary" />
+              <div className="mt-2 flex items-center justify-between text-xs font-bold text-muted-foreground">
+                <span>Building meals</span>
+                <span>{generateProgress}%</span>
+              </div>
             </div>
           )}
         </div>
@@ -214,7 +233,7 @@ function Planner() {
                 disabled={notifying || !prefs.cookLinked}
                 className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary-foreground px-3 py-1 text-xs font-bold text-primary disabled:opacity-60"
               >
-                <BellRing className="size-3" /> {notifying ? "Sending..." : "Notify now"}
+                <BellRing className="size-3" /> {notifying ? "Sending..." : "Notify me"}
               </button>
             </div>
           </section>

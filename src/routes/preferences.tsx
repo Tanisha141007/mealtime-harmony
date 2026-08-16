@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Copy, Minus, Phone, Plus, Sparkles, X } from "lucide-react";
+import { BellRing, Clock, Copy, Minus, Phone, Plus, Sparkles, X } from "lucide-react";
 import { AppShell, PageHeader } from "@/components/AppShell";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { usePlanner } from "@/lib/planner";
 import { askAi, type HouseholdInput } from "@/lib/api";
+import { SLOT_LABEL, SLOT_ORDER, type MealSlot } from "@/lib/recipes";
 
 export const Route = createFileRoute("/preferences")({
   head: () => ({
@@ -354,6 +355,7 @@ function Onboarding() {
 
 function EditHousehold() {
   const { prefs, setPrefs, householdId } = usePlanner();
+  const [tab, setTab] = useState<"profile" | "scheduler">("profile");
   const [ask, setAsk] = useState("");
   const [asking, setAsking] = useState(false);
   const [replies, setReplies] = useState<string[]>([]);
@@ -369,6 +371,12 @@ function EditHousehold() {
   const toggleCuisine = (value: string) => {
     const list = prefs.cuisines;
     setPrefs({ cuisines: list.includes(value) ? list.filter((v) => v !== value) : [...list, value] });
+  };
+
+  const toggleScheduledMeal = (slot: MealSlot) => {
+    const current = prefs.notifyMeals;
+    const next = current.includes(slot) ? current.filter((s) => s !== slot) : [...current, slot];
+    setPrefs({ notifyMeals: next });
   };
 
   const submitAsk = async () => {
@@ -395,7 +403,27 @@ function EditHousehold() {
     <AppShell>
       <PageHeader title="Preferences" subtitle="How your household eats" />
 
+      <div className="mb-4 grid grid-cols-2 rounded-2xl bg-cream p-1">
+        {[
+          ["profile", "Profile"],
+          ["scheduler", "Scheduler"],
+        ].map(([value, label]) => (
+          <button
+            key={value}
+            onClick={() => setTab(value as "profile" | "scheduler")}
+            className={
+              "rounded-xl px-3 py-2 text-sm font-bold transition-colors " +
+              (tab === value ? "bg-card text-foreground shadow-sm" : "text-muted-foreground")
+            }
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       <div className="space-y-4">
+        {tab === "profile" ? (
+          <>
         <Section title="Cook status">
           {prefs.cookLinked ? (
             <p className="text-sm font-semibold text-primary">
@@ -597,6 +625,100 @@ function EditHousehold() {
             </div>
           )}
         </Section>
+          </>
+        ) : (
+          <>
+            <Section title="Daily cook schedule">
+              <div className="flex items-center justify-between gap-4 rounded-2xl bg-cream px-4 py-3">
+                <div>
+                  <p className="text-sm font-bold">Schedule daily meal messages</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Send separate cook-ready messages for selected meals.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setPrefs({ notifyMe: !prefs.notifyMe })}
+                  className={
+                    "rounded-full px-4 py-2 text-sm font-bold " +
+                    (prefs.notifyMe ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground")
+                  }
+                >
+                  {prefs.notifyMe ? "On" : "Off"}
+                </button>
+              </div>
+
+              <div className="mt-4">
+                <label className="text-sm font-bold">Meals</label>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  {SLOT_ORDER.map((slot) => {
+                    const selected = prefs.notifyMeals.includes(slot);
+                    return (
+                      <button
+                        key={slot}
+                        onClick={() => toggleScheduledMeal(slot)}
+                        className={
+                          "inline-flex items-center justify-center rounded-2xl border px-3 py-2.5 text-sm font-bold " +
+                          (selected
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border bg-card text-muted-foreground")
+                        }
+                      >
+                        {SLOT_LABEL[slot]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <label className="mt-4 block text-sm font-bold" htmlFor="send-time">
+                Send time
+              </label>
+              <div className="relative mt-1.5">
+                <Clock className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="send-time"
+                  type="time"
+                  value={prefs.sendTime}
+                  onChange={(e) => setPrefs({ sendTime: e.target.value })}
+                  className="rounded-2xl bg-cream pl-9"
+                />
+              </div>
+
+              <div className="mt-4 rounded-2xl bg-secondary p-3 text-sm font-semibold text-secondary-foreground">
+                <BellRing className="mr-1.5 inline size-4" />
+                {prefs.notifyMe
+                  ? `${prefs.cookName || "Your cook"} will get ${prefs.notifyMeals.length || 0} separate message${
+                      prefs.notifyMeals.length === 1 ? "" : "s"
+                    } daily at ${prefs.sendTime}.`
+                  : "Scheduled cook messages are off."}
+              </div>
+            </Section>
+
+            <Section title="Cook link">
+              {prefs.cookLinked ? (
+                <p className="text-sm font-semibold text-primary">
+                  {prefs.cookName} is linked and can receive scheduled meal messages.
+                </p>
+              ) : (
+                <>
+                  <p className="text-sm text-muted-foreground">
+                    Ask {prefs.cookName || "your cook"} to open <span className="font-bold">t.me/ahaara_bot</span> on
+                    Telegram and send this code:
+                  </p>
+                  <div className="mt-3 flex items-center justify-between rounded-2xl bg-cream px-4 py-3">
+                    <span className="font-display text-2xl font-bold tracking-widest">{prefs.linkCode}</span>
+                    <button
+                      onClick={copyLinkCode}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground"
+                    >
+                      <Copy className="size-3.5" /> Copy
+                    </button>
+                  </div>
+                </>
+              )}
+            </Section>
+          </>
+        )}
       </div>
     </AppShell>
   );

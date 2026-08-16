@@ -6,6 +6,7 @@ import {
   type ReactNode,
 } from "react";
 import type { Session } from "@supabase/supabase-js";
+import { sendWelcomeEmail } from "./api";
 import { supabase } from "./supabase";
 import { DEMO_MODE } from "./demo";
 
@@ -51,7 +52,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       password,
     });
-    if (data.session) setSession(data.session);
+    if (data.session) {
+      setSession(data.session);
+      sendWelcomeEmail().catch((error) => console.warn("ahaar welcome email failed", error));
+    }
     return { error: error?.message ?? null };
   };
 
@@ -61,7 +65,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       password,
     });
-    if (data.session) setSession(data.session);
+    if (data.session) {
+      setSession(data.session);
+      sendWelcomeEmail().catch((error) => console.warn("ahaar welcome email failed", error));
+    }
     return { error: error?.message ?? null, needsConfirmation: !data.session };
   };
 

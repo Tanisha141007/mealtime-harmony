@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/sheet";
 import { usePlanner, type Recipe } from "@/lib/planner";
 import { listRecipes, type RecipeFilters } from "@/lib/api";
+import { DEMO_MODE, demoRecipes } from "@/lib/demo";
 import { SLOT_LABEL, SLOT_ORDER, type MealSlot } from "@/lib/recipes";
 
 export const Route = createFileRoute("/discover")({
@@ -55,8 +56,17 @@ function useRecipeRow(householdId: number | null, title: string, filters: Recipe
   const query = useQuery({
     queryKey: ["recipes", householdId, filters],
     queryFn: () => listRecipes(householdId as number, filters),
-    enabled: !!householdId,
+    enabled: !!householdId && !DEMO_MODE,
   });
+  if (DEMO_MODE) {
+    const items = demoRecipes
+      .filter((recipe) => !filters.slot || recipe.slots.includes(filters.slot))
+      .filter((recipe) => !filters.season || recipe.season === filters.season || recipe.season === "all")
+      .filter((recipe) => !filters.category || recipe.category === filters.category)
+      .filter((recipe) => !filters.max_minutes || recipe.minutes <= filters.max_minutes)
+      .slice(0, filters.limit ?? 20);
+    return { title, items, loading: false };
+  }
   return { title, items: query.data ?? [], loading: query.isLoading };
 }
 
