@@ -91,11 +91,22 @@ function Planner() {
   };
 
   const handleGenerate = async () => {
+    setGenerateProgress(0);
+    const interval = setInterval(() => {
+      setGenerateProgress((prev) => {
+        if (prev >= 90) return prev;
+        return prev + Math.random() * 12;
+      });
+    }, 180);
     try {
       await generateWeek();
+      setGenerateProgress(100);
       toast.success("This week's plan is ready");
     } catch (e) {
       toast.error("Couldn't generate a plan", { description: e instanceof Error ? e.message : undefined });
+    } finally {
+      clearInterval(interval);
+      setTimeout(() => setGenerateProgress(0), 400);
     }
   };
 
