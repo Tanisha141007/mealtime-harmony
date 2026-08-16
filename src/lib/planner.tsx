@@ -34,6 +34,8 @@ export type CookSchedule = Record<DayKey, CookScheduleEntry[]>;
 
 export type Prefs = {
   household: number;
+  flatNo: string;
+  building: string;
   location: string;
   city: string;
   state: string;
@@ -56,6 +58,8 @@ export type Prefs = {
 
 const DEFAULT_PREFS: Prefs = {
   household: 4,
+  flatNo: "",
+  building: "",
   location: "",
   city: "",
   state: "",
@@ -93,6 +97,8 @@ export const toKey = (d: Date) => d.toISOString().slice(0, 10);
 function apiHouseholdToPrefs(h: ApiHousehold): Prefs {
   return {
     household: h.household,
+    flatNo: h.flatNo,
+    building: h.building,
     location: h.location,
     city: h.city,
     state: h.state,
@@ -117,6 +123,8 @@ function apiHouseholdToPrefs(h: ApiHousehold): Prefs {
 function prefsToHouseholdInput(p: Partial<Prefs>): Partial<HouseholdInput> {
   const out: Partial<HouseholdInput> = {};
   if (p.household !== undefined) out.family_size = p.household;
+  if (p.flatNo !== undefined) out.flat_no = p.flatNo;
+  if (p.building !== undefined) out.building = p.building;
   if (p.city !== undefined) out.city = p.city;
   if (p.state !== undefined) out.state = p.state;
   if (p.dietType !== undefined) out.diet_type = p.dietType;
@@ -204,6 +212,24 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   });
   const createHousehold = useCallback(
     async (input: HouseholdInput) => {
+      if (DEMO_MODE) {
+        setDemoPrefsState((current) => ({
+          ...current,
+          household: input.family_size ?? current.household,
+          flatNo: input.flat_no ?? current.flatNo,
+          building: input.building ?? current.building,
+          city: input.city ?? current.city,
+          state: input.state ?? current.state,
+          dietType: input.diet_type ?? current.dietType,
+          dislikes: input.disliked_ingredients ?? current.dislikes,
+          allergies: input.allergies ?? current.allergies,
+          cuisines: input.preferred_cuisines ?? current.cuisines,
+          cookName: input.cook_name,
+          cookPhone: input.cook_phone,
+          notes: input.notes ?? current.notes,
+        }));
+        return;
+      }
       await createMutation.mutateAsync(input);
     },
     [createMutation],

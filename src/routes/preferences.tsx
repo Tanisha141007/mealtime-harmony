@@ -150,6 +150,8 @@ function Onboarding() {
   const { createHousehold, creatingHousehold } = usePlanner();
   const [form, setForm] = useState<HouseholdInput>({
     name: "",
+    flat_no: "",
+    building: "",
     cook_name: "",
     cook_phone: "",
     city: "",
@@ -196,6 +198,34 @@ function Onboarding() {
             placeholder="e.g. Malani household"
             className="mt-1.5 rounded-2xl bg-cream"
           />
+
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-bold" htmlFor="flat-no">
+                Flat no.
+              </label>
+              <Input
+                id="flat-no"
+                value={form.flat_no}
+                onChange={(e) => set("flat_no", e.target.value)}
+                placeholder="203"
+                className="mt-1.5 rounded-2xl bg-cream"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-bold" htmlFor="building">
+                Building
+              </label>
+              <Input
+                id="building"
+                value={form.building}
+                onChange={(e) => set("building", e.target.value)}
+                placeholder="Shiv Chintan"
+                className="mt-1.5 rounded-2xl bg-cream"
+              />
+            </div>
+          </div>
+          <p className="mt-1.5 text-xs text-muted-foreground">Shown to your cook as घर: flat no., building name in Hindi.</p>
 
           <div className="mt-3 flex items-center justify-between rounded-2xl bg-cream px-4 py-3">
             <span className="text-sm font-bold">People to cook for</span>
@@ -389,6 +419,8 @@ function EditHousehold() {
   // since every change here is a real API call now (not local state).
   const [cookName, setCookName] = useState(prefs.cookName);
   const [cookPhone, setCookPhone] = useState(prefs.cookPhone);
+  const [flatNo, setFlatNo] = useState(prefs.flatNo);
+  const [building, setBuilding] = useState(prefs.building);
   const [city, setCity] = useState(prefs.city);
 
   const toggleCuisine = (value: string) => {
@@ -507,7 +539,7 @@ function EditHousehold() {
           ) : (
             <>
               <p className="text-sm text-muted-foreground">
-                {prefs.cookName || "Your cook"} hasn't linked yet. Open{" "}
+                {prefs.cookName || "Your cook"} hasn't linked this household yet. They can open{" "}
                 <a
                   href="https://t.me/ahaara_bot"
                   target="_blank"
@@ -516,7 +548,7 @@ function EditHousehold() {
                 >
                   @ahaara_bot
                 </a>{" "}
-                on Telegram and send this code:
+                and send this code in the same bot chat they use for other homes:
               </p>
               <div className="mt-3 flex items-center justify-between rounded-2xl bg-cream px-4 py-3">
                 <span className="font-display text-2xl font-bold tracking-widest">{prefs.linkCode}</span>
@@ -552,6 +584,35 @@ function EditHousehold() {
               </button>
             </div>
           </div>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-bold" htmlFor="flat-no-edit">
+                Flat no.
+              </label>
+              <Input
+                id="flat-no-edit"
+                value={flatNo}
+                onChange={(e) => setFlatNo(e.target.value)}
+                onBlur={() => flatNo !== prefs.flatNo && setPrefs({ flatNo })}
+                placeholder="203"
+                className="mt-1.5 rounded-2xl bg-cream"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-bold" htmlFor="building-edit">
+                Building
+              </label>
+              <Input
+                id="building-edit"
+                value={building}
+                onChange={(e) => setBuilding(e.target.value)}
+                onBlur={() => building !== prefs.building && setPrefs({ building })}
+                placeholder="Shiv Chintan"
+                className="mt-1.5 rounded-2xl bg-cream"
+              />
+            </div>
+          </div>
+          <p className="mt-1.5 text-xs text-muted-foreground">Cook messages use this as घर: flat no., building name in Hindi.</p>
           <label className="mt-3 block text-sm font-bold" htmlFor="city">
             City
           </label>
@@ -853,7 +914,8 @@ function EditHousehold() {
                     >
                       @ahaara_bot
                     </a>{" "}
-                    on Telegram and send this code:
+                    and send this code. If they cook for multiple homes, each household can send its own code in the
+                    same bot chat:
                   </p>
                   <div className="mt-3 flex items-center justify-between rounded-2xl bg-cream px-4 py-3">
                     <span className="font-display text-2xl font-bold tracking-widest">{prefs.linkCode}</span>
