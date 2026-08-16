@@ -539,8 +539,9 @@ function EditHousehold() {
           ) : (
             <>
               <p className="text-sm text-muted-foreground">
-                {prefs.cookName || "Your cook"} hasn't linked yet. Open{" "}
-                <span className="font-bold">t.me/ahaara_bot</span> on Telegram and send this code:
+                {prefs.cookName || "Your cook"} hasn't linked this household yet. They can open{" "}
+                <span className="font-bold">t.me/ahaara_bot</span> and send this code in the same bot chat they use for
+                other homes:
               </p>
               <div className="mt-3 flex items-center justify-between rounded-2xl bg-cream px-4 py-3">
                 <span className="font-display text-2xl font-bold tracking-widest">{prefs.linkCode}</span>
@@ -897,8 +898,9 @@ function EditHousehold() {
               ) : (
                 <>
                   <p className="text-sm text-muted-foreground">
-                    Ask {prefs.cookName || "your cook"} to open <span className="font-bold">t.me/ahaara_bot</span> on
-                    Telegram and send this code:
+                    Ask {prefs.cookName || "your cook"} to open <span className="font-bold">t.me/ahaara_bot</span> and
+                    send this code. If they cook for multiple homes, each household can send its own code in the same
+                    bot chat:
                   </p>
                   <div className="mt-3 flex items-center justify-between rounded-2xl bg-cream px-4 py-3">
                     <span className="font-display text-2xl font-bold tracking-widest">{prefs.linkCode}</span>

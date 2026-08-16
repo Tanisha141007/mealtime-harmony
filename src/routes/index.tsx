@@ -131,8 +131,8 @@ function Planner() {
 
   const handleNotify = async () => {
     if (DEMO_MODE) {
-      toast.success(`${prefs.cookName} notified`, {
-        description: "Demo mode: no backend message was sent.",
+      toast.info("Demo mode only", {
+        description: "No cook message was sent from this local preview.",
       });
       return;
     }
