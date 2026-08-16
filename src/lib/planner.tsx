@@ -34,6 +34,8 @@ export type CookSchedule = Record<DayKey, CookScheduleEntry[]>;
 
 export type Prefs = {
   household: number;
+  flatNo: string;
+  building: string;
   location: string;
   city: string;
   state: string;
@@ -56,6 +58,8 @@ export type Prefs = {
 
 const DEFAULT_PREFS: Prefs = {
   household: 4,
+  flatNo: "",
+  building: "",
   location: "",
   city: "",
   state: "",
@@ -93,6 +97,8 @@ export const toKey = (d: Date) => d.toISOString().slice(0, 10);
 function apiHouseholdToPrefs(h: ApiHousehold): Prefs {
   return {
     household: h.household,
+    flatNo: h.flatNo,
+    building: h.building,
     location: h.location,
     city: h.city,
     state: h.state,
@@ -117,6 +123,8 @@ function apiHouseholdToPrefs(h: ApiHousehold): Prefs {
 function prefsToHouseholdInput(p: Partial<Prefs>): Partial<HouseholdInput> {
   const out: Partial<HouseholdInput> = {};
   if (p.household !== undefined) out.family_size = p.household;
+  if (p.flatNo !== undefined) out.flat_no = p.flatNo;
+  if (p.building !== undefined) out.building = p.building;
   if (p.city !== undefined) out.city = p.city;
   if (p.state !== undefined) out.state = p.state;
   if (p.dietType !== undefined) out.diet_type = p.dietType;

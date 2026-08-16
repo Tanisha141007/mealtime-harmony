@@ -65,6 +65,8 @@ export type ApiRecipe = {
 export type ApiHousehold = {
   id: number;
   household: number;
+  flatNo: string;
+  building: string;
   location: string;
   city: string;
   state: string;
@@ -87,6 +89,8 @@ export type ApiHousehold = {
 
 export type HouseholdInput = {
   name: string;
+  flat_no?: string;
+  building?: string;
   cook_name: string;
   cook_phone: string;
   city?: string;

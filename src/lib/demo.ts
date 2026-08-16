@@ -5,6 +5,8 @@ export const DEMO_MODE = import.meta.env["VITE_DEMO_AUTH"] === "true";
 
 export const demoPrefs: Prefs = {
   household: 4,
+  flatNo: "203",
+  building: "Shiv Chintan",
   location: "Kochi, Kerala",
   city: "Kochi",
   state: "Kerala",
