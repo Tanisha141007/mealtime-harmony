@@ -1,3 +1,4 @@
+import { AhaarWordmark } from "@/components/AhaarLogo";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
