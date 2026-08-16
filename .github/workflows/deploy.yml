@@ -1,0 +1,47 @@
+name: Deploy to Cloudflare Workers
+
+# This is a TanStack Start SSR app, not a static site - `npm run build`
+# (Nitro's cloudflare-module preset) produces a Worker script at
+# .output/server/index.mjs plus static assets at .output/public, with a
+# wrangler.json generated alongside the worker script on every build (see
+# vite.config.ts). Cloudflare's git-integration ("Workers Builds") setup
+# for that nested, freshly-generated-per-build config is fiddly to get
+# right blind from a dashboard, so this drives the same `wrangler deploy`
+# directly via CI instead - deterministic, and the same pattern already
+# used for the backend's scheduled-jobs.yml.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          # Baked into the client bundle at build time (Vite convention) -
+          # not secret: the Supabase anon key is designed to be public
+          # (row-level security is what actually protects data), and the
+          # API base URL is just this app's own backend's public URL.
+          VITE_SUPABASE_URL: https://yhrbnrrfbwydecnauwzd.supabase.co
+          VITE_SUPABASE_ANON_KEY: sb_publishable_7AlJAVxkaiRPHpJYui7GnQ_4NPT2l8F
+          VITE_API_BASE_URL: https://caspian-meal-planner-api.onrender.com
+
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: .output/server
+          command: deploy
