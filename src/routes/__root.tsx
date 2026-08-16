@@ -81,13 +81,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Caspian — Meal Planner & Cook Coordination" },
+      { title: "ahaar — Meal Planner & Cook Coordination" },
       {
         name: "description",
         content:
           "Plan a week of Indian meals for your household and keep your cook in the loop automatically.",
       },
-      { property: "og:title", content: "Caspian — Meal Planner & Cook Coordination" },
+      { property: "og:title", content: "ahaar — Meal Planner & Cook Coordination" },
       {
         property: "og:description",
         content: "A warm weekly meal planner for Indian households, with automatic cook updates.",

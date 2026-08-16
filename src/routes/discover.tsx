@@ -20,13 +20,13 @@ import { SLOT_LABEL, SLOT_ORDER, type MealSlot } from "@/lib/recipes";
 export const Route = createFileRoute("/discover")({
   head: () => ({
     meta: [
-      { title: "Discover Dishes — Caspian" },
+      { title: "Discover Dishes — ahaar" },
       {
         name: "description",
         content:
           "Browse seasonal picks, high-protein dishes and regional favourites, and drop them straight into your week.",
       },
-      { property: "og:title", content: "Discover Dishes — Caspian" },
+      { property: "og:title", content: "Discover Dishes — ahaar" },
       {
         property: "og:description",
         content: "Regional Indian meal suggestions you can add to any slot in your plan.",

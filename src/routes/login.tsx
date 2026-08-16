@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
-    meta: [{ title: "Sign in — Caspian" }],
+    meta: [{ title: "Sign in — ahaar" }],
   }),
   component: Login,
 });
