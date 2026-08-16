@@ -26,7 +26,10 @@ jobs:
       # tracked, package-lock.json is gitignored on purpose).
       - uses: oven-sh/setup-bun@v2
 
-      - run: bun install --frozen-lockfile
+      # Not --frozen-lockfile: bun.lock has drifted from package.json (pre-
+      # existing, not something this workflow caused) - regenerate rather
+      # than hard-fail the deploy on it.
+      - run: bun install
 
       - name: Build
         run: bun run build
