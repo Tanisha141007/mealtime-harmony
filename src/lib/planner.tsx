@@ -212,6 +212,24 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   });
   const createHousehold = useCallback(
     async (input: HouseholdInput) => {
+      if (DEMO_MODE) {
+        setDemoPrefsState((current) => ({
+          ...current,
+          household: input.family_size ?? current.household,
+          flatNo: input.flat_no ?? current.flatNo,
+          building: input.building ?? current.building,
+          city: input.city ?? current.city,
+          state: input.state ?? current.state,
+          dietType: input.diet_type ?? current.dietType,
+          dislikes: input.disliked_ingredients ?? current.dislikes,
+          allergies: input.allergies ?? current.allergies,
+          cuisines: input.preferred_cuisines ?? current.cuisines,
+          cookName: input.cook_name,
+          cookPhone: input.cook_phone,
+          notes: input.notes ?? current.notes,
+        }));
+        return;
+      }
       await createMutation.mutateAsync(input);
     },
     [createMutation],
