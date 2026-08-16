@@ -1,12 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Copy, Minus, Phone, Plus, Sparkles, X } from "lucide-react";
+import { BellRing, Clock, Copy, Minus, Phone, Plus, Sparkles, Trash2, X } from "lucide-react";
 import { AppShell, PageHeader } from "@/components/AppShell";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { usePlanner } from "@/lib/planner";
 import { askAi, type HouseholdInput } from "@/lib/api";
+import { SLOT_LABEL, SLOT_ORDER, type MealSlot } from "@/lib/recipes";
+import type { DayKey } from "@/lib/planner";
 
 export const Route = createFileRoute("/preferences")({
   head: () => ({
@@ -48,6 +50,16 @@ const STATES = [
   "Andhra Pradesh",
   "Goa",
   "Karnataka",
+];
+
+const SCHEDULE_DAYS: { key: DayKey; label: string }[] = [
+  { key: "monday", label: "Monday" },
+  { key: "tuesday", label: "Tuesday" },
+  { key: "wednesday", label: "Wednesday" },
+  { key: "thursday", label: "Thursday" },
+  { key: "friday", label: "Friday" },
+  { key: "saturday", label: "Saturday" },
+  { key: "sunday", label: "Sunday" },
 ];
 
 function Chips({
@@ -354,11 +366,13 @@ function Onboarding() {
 
 function EditHousehold() {
   const { prefs, setPrefs, householdId } = usePlanner();
+  const [tab, setTab] = useState<"profile" | "scheduler">("profile");
   const [ask, setAsk] = useState("");
   const [asking, setAsking] = useState(false);
   const [replies, setReplies] = useState<string[]>([]);
   const [newDislike, setNewDislike] = useState("");
   const [newAllergy, setNewAllergy] = useState("");
+  const [copyScheduleToEveryDay, setCopyScheduleToEveryDay] = useState(false);
 
   // Local-buffered text fields - save on blur instead of every keystroke,
   // since every change here is a real API call now (not local state).
@@ -369,6 +383,58 @@ function EditHousehold() {
   const toggleCuisine = (value: string) => {
     const list = prefs.cuisines;
     setPrefs({ cuisines: list.includes(value) ? list.filter((v) => v !== value) : [...list, value] });
+  };
+
+  const applySchedule = (schedule: typeof prefs.cookMessageSchedule) => {
+    setPrefs({ cookMessageSchedule: schedule });
+  };
+
+  const copyDayToAllDays = (source: DayKey, schedule = prefs.cookMessageSchedule) => {
+    const sourceRows = (schedule[source] || []).map((row) => ({ ...row, meals: [...row.meals] }));
+    const next = SCHEDULE_DAYS.reduce(
+      (acc, day) => ({ ...acc, [day.key]: sourceRows.map((row) => ({ ...row, meals: [...row.meals] })) }),
+      {} as typeof prefs.cookMessageSchedule,
+    );
+    applySchedule(next);
+  };
+
+  const setDaySchedule = (day: DayKey, rows: typeof prefs.cookMessageSchedule[DayKey]) => {
+    const next = { ...prefs.cookMessageSchedule, [day]: rows };
+    if (copyScheduleToEveryDay && day === "monday") {
+      copyDayToAllDays("monday", next);
+      return;
+    }
+    applySchedule(next);
+  };
+
+  const addScheduleRow = (day: DayKey) => {
+    setDaySchedule(day, [
+      ...(prefs.cookMessageSchedule[day] || []),
+      { enabled: true, time: "09:00", meals: ["lunch"], message: "" },
+    ]);
+  };
+
+  const updateScheduleRow = (
+    day: DayKey,
+    index: number,
+    patch: Partial<typeof prefs.cookMessageSchedule[DayKey][number]>,
+  ) => {
+    setDaySchedule(
+      day,
+      (prefs.cookMessageSchedule[day] || []).map((row, idx) =>
+        idx === index ? { ...row, ...patch } : row,
+      ),
+    );
+  };
+
+  const removeScheduleRow = (day: DayKey, index: number) => {
+    setDaySchedule(day, (prefs.cookMessageSchedule[day] || []).filter((_, idx) => idx !== index));
+  };
+
+  const toggleScheduleMeal = (day: DayKey, index: number, slot: MealSlot) => {
+    const row = prefs.cookMessageSchedule[day][index];
+    const meals = row.meals.includes(slot) ? row.meals.filter((meal) => meal !== slot) : [...row.meals, slot];
+    updateScheduleRow(day, index, { meals });
   };
 
   const submitAsk = async () => {
@@ -395,7 +461,27 @@ function EditHousehold() {
     <AppShell>
       <PageHeader title="Preferences" subtitle="How your household eats" />
 
+      <div className="mb-4 grid grid-cols-2 rounded-2xl bg-cream p-1">
+        {[
+          ["profile", "Profile"],
+          ["scheduler", "Scheduler"],
+        ].map(([value, label]) => (
+          <button
+            key={value}
+            onClick={() => setTab(value as "profile" | "scheduler")}
+            className={
+              "rounded-xl px-3 py-2 text-sm font-bold transition-colors " +
+              (tab === value ? "bg-card text-foreground shadow-sm" : "text-muted-foreground")
+            }
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       <div className="space-y-4">
+        {tab === "profile" ? (
+          <>
         <Section title="Cook status">
           {prefs.cookLinked ? (
             <p className="text-sm font-semibold text-primary">
@@ -597,6 +683,178 @@ function EditHousehold() {
             </div>
           )}
         </Section>
+          </>
+        ) : (
+          <>
+            <Section title="Daily cook schedule">
+              <div className="flex items-center justify-between gap-4 rounded-2xl bg-cream px-4 py-3">
+                <div>
+                  <p className="text-sm font-bold">Schedule daily meal messages</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Send different messages at different times through the week.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setPrefs({ notifyMe: !prefs.notifyMe })}
+                  className={
+                    "rounded-full px-4 py-2 text-sm font-bold " +
+                    (prefs.notifyMe ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground")
+                  }
+                >
+                  {prefs.notifyMe ? "On" : "Off"}
+                </button>
+              </div>
+
+              <label className="mt-4 flex items-start gap-3 rounded-2xl border border-border bg-card px-4 py-3">
+                <input
+                  type="checkbox"
+                  checked={copyScheduleToEveryDay}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setCopyScheduleToEveryDay(checked);
+                    if (checked) copyDayToAllDays("monday");
+                  }}
+                  className="mt-1 size-4 accent-primary"
+                />
+                <span>
+                  <span className="block text-sm font-bold">Copy Monday's schedule to each day</span>
+                  <span className="mt-1 block text-xs text-muted-foreground">
+                    Keep this on when the same cook rhythm repeats all week.
+                  </span>
+                </span>
+              </label>
+
+              <div className="mt-5 divide-y divide-border">
+                {SCHEDULE_DAYS.map((day) => {
+                  const rows = prefs.cookMessageSchedule[day.key] || [];
+                  return (
+                    <div key={day.key} className="py-5 first:pt-0 last:pb-0">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-base font-bold">{day.label}</p>
+                          <p className="text-xs font-semibold text-primary">
+                            {rows.some((row) => row.enabled) ? "Scheduled" : "Off"}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => addScheduleRow(day.key)}
+                          disabled={copyScheduleToEveryDay && day.key !== "monday"}
+                          className="grid size-10 shrink-0 place-items-center rounded-full border border-border bg-card text-foreground disabled:opacity-40"
+                          aria-label={`Add ${day.label} message`}
+                        >
+                          <Plus className="size-5" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-3">
+                        {rows.map((row, index) => (
+                          <div key={`${day.key}-${index}`} className="rounded-2xl bg-cream p-3">
+                            <div className="grid gap-3 sm:grid-cols-[auto_1fr_auto] sm:items-center">
+                              <button
+                                onClick={() => updateScheduleRow(day.key, index, { enabled: !row.enabled })}
+                                className={
+                                  "h-8 w-14 rounded-full p-1 transition-colors " +
+                                  (row.enabled ? "bg-primary" : "bg-muted")
+                                }
+                                aria-label={row.enabled ? "Disable message" : "Enable message"}
+                              >
+                                <span
+                                  className={
+                                    "block size-6 rounded-full bg-card transition-transform " +
+                                    (row.enabled ? "translate-x-6" : "translate-x-0")
+                                  }
+                                />
+                              </button>
+
+                              <div className="relative">
+                                <Clock className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                  type="time"
+                                  value={row.time}
+                                  onChange={(e) => updateScheduleRow(day.key, index, { time: e.target.value })}
+                                  className="rounded-2xl bg-card pl-9"
+                                  disabled={!row.enabled}
+                                />
+                              </div>
+
+                              <button
+                                onClick={() => removeScheduleRow(day.key, index)}
+                                className="grid size-10 place-items-center rounded-xl bg-card text-muted-foreground"
+                                aria-label={`Delete ${day.label} message`}
+                              >
+                                <Trash2 className="size-4" />
+                              </button>
+                            </div>
+
+                            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                              {SLOT_ORDER.map((slot) => {
+                                const selected = row.meals.includes(slot);
+                                return (
+                                  <button
+                                    key={slot}
+                                    onClick={() => toggleScheduleMeal(day.key, index, slot)}
+                                    disabled={!row.enabled}
+                                    className={
+                                      "rounded-xl border px-3 py-2 text-xs font-bold " +
+                                      (selected
+                                        ? "border-primary bg-primary text-primary-foreground"
+                                        : "border-border bg-card text-muted-foreground")
+                                    }
+                                  >
+                                    {SLOT_LABEL[slot]}
+                                  </button>
+                                );
+                              })}
+                            </div>
+
+                            <Textarea
+                              value={row.message}
+                              onChange={(e) => updateScheduleRow(day.key, index, { message: e.target.value })}
+                              placeholder="Optional message, e.g. prep the dal first and keep rotis for 1 PM"
+                              className="mt-3 min-h-20 rounded-2xl bg-card"
+                              disabled={!row.enabled}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="mt-4 rounded-2xl bg-secondary p-3 text-sm font-semibold text-secondary-foreground">
+                <BellRing className="mr-1.5 inline size-4" />
+                {prefs.notifyMe
+                  ? `${prefs.cookName || "Your cook"} will receive the enabled messages at the times above.`
+                  : "Scheduled cook messages are off."}
+              </div>
+            </Section>
+
+            <Section title="Cook link">
+              {prefs.cookLinked ? (
+                <p className="text-sm font-semibold text-primary">
+                  {prefs.cookName} is linked and can receive scheduled meal messages.
+                </p>
+              ) : (
+                <>
+                  <p className="text-sm text-muted-foreground">
+                    Ask {prefs.cookName || "your cook"} to open <span className="font-bold">t.me/ahaara_bot</span> on
+                    Telegram and send this code:
+                  </p>
+                  <div className="mt-3 flex items-center justify-between rounded-2xl bg-cream px-4 py-3">
+                    <span className="font-display text-2xl font-bold tracking-widest">{prefs.linkCode}</span>
+                    <button
+                      onClick={copyLinkCode}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground"
+                    >
+                      <Copy className="size-3.5" /> Copy
+                    </button>
+                  </div>
+                </>
+              )}
+            </Section>
+          </>
+        )}
       </div>
     </AppShell>
   );
