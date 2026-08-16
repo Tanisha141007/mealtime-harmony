@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { BellRing, Clock, Copy, Minus, Phone, Plus, Sparkles, Trash2, X } from "lucide-react";
+import { BellRing, ChevronDown, Copy, Minus, Phone, Plus, Sparkles, Trash2, X } from "lucide-react";
 import { AppShell, PageHeader } from "@/components/AppShell";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -61,6 +61,17 @@ const SCHEDULE_DAYS: { key: DayKey; label: string }[] = [
   { key: "saturday", label: "Saturday" },
   { key: "sunday", label: "Sunday" },
 ];
+
+const DEFAULT_SCHEDULE_ROWS = [
+  { enabled: true, time: "12:00", meals: ["lunch" as MealSlot], message: "" },
+  { enabled: true, time: "18:00", meals: ["dinner" as MealSlot], message: "" },
+];
+
+const mealSelectionLabel = (meals: MealSlot[]) => {
+  if (!meals.length) return "Select meals";
+  if (meals.length === 1) return SLOT_LABEL[meals[0]];
+  return meals.map((meal) => SLOT_LABEL[meal]).join(", ");
+};
 
 function Chips({
   items,
@@ -407,9 +418,14 @@ function EditHousehold() {
     applySchedule(next);
   };
 
+  const getDayRows = (day: DayKey) => {
+    const rows = prefs.cookMessageSchedule[day] || [];
+    return rows.length ? rows : DEFAULT_SCHEDULE_ROWS.map((row) => ({ ...row, meals: [...row.meals] }));
+  };
+
   const addScheduleRow = (day: DayKey) => {
     setDaySchedule(day, [
-      ...(prefs.cookMessageSchedule[day] || []),
+      ...getDayRows(day),
       { enabled: true, time: "09:00", meals: ["lunch"], message: "" },
     ]);
   };
@@ -419,22 +435,23 @@ function EditHousehold() {
     index: number,
     patch: Partial<typeof prefs.cookMessageSchedule[DayKey][number]>,
   ) => {
+    const rows = getDayRows(day);
     setDaySchedule(
       day,
-      (prefs.cookMessageSchedule[day] || []).map((row, idx) =>
-        idx === index ? { ...row, ...patch } : row,
-      ),
+      rows.map((row, idx) => (idx === index ? { ...row, ...patch } : row)),
     );
   };
 
   const removeScheduleRow = (day: DayKey, index: number) => {
-    setDaySchedule(day, (prefs.cookMessageSchedule[day] || []).filter((_, idx) => idx !== index));
+    setDaySchedule(day, getDayRows(day).filter((_, idx) => idx !== index));
   };
 
   const toggleScheduleMeal = (day: DayKey, index: number, slot: MealSlot) => {
-    const row = prefs.cookMessageSchedule[day][index];
-    const meals = row.meals.includes(slot) ? row.meals.filter((meal) => meal !== slot) : [...row.meals, slot];
-    updateScheduleRow(day, index, { meals });
+    const row = getDayRows(day)[index];
+    const meals = row.meals.includes(slot)
+      ? row.meals.filter((meal) => meal !== slot)
+      : [...row.meals, slot];
+    updateScheduleRow(day, index, { meals: meals.length ? meals : [slot] });
   };
 
   const submitAsk = async () => {
@@ -724,96 +741,77 @@ function EditHousehold() {
                 </span>
               </label>
 
-              <div className="mt-5 divide-y divide-border">
+              <div className="mt-5 grid gap-3">
                 {SCHEDULE_DAYS.map((day) => {
-                  const rows = prefs.cookMessageSchedule[day.key] || [];
+                  const rows = getDayRows(day.key);
                   return (
-                    <div key={day.key} className="py-5 first:pt-0 last:pb-0">
+                    <div key={day.key} className="rounded-2xl bg-cream p-4">
                       <div className="mb-3 flex items-center justify-between gap-3">
                         <div>
                           <p className="text-base font-bold">{day.label}</p>
-                          <p className="text-xs font-semibold text-primary">
-                            {rows.some((row) => row.enabled) ? "Scheduled" : "Off"}
-                          </p>
                         </div>
-                        <button
-                          onClick={() => addScheduleRow(day.key)}
-                          disabled={copyScheduleToEveryDay && day.key !== "monday"}
-                          className="grid size-10 shrink-0 place-items-center rounded-full border border-border bg-card text-foreground disabled:opacity-40"
-                          aria-label={`Add ${day.label} message`}
-                        >
-                          <Plus className="size-5" />
-                        </button>
                       </div>
 
-                      <div className="space-y-3">
+                      <div className="space-y-2">
                         {rows.map((row, index) => (
-                          <div key={`${day.key}-${index}`} className="rounded-2xl bg-cream p-3">
-                            <div className="grid gap-3 sm:grid-cols-[auto_1fr_auto] sm:items-center">
-                              <button
-                                onClick={() => updateScheduleRow(day.key, index, { enabled: !row.enabled })}
-                                className={
-                                  "h-8 w-14 rounded-full p-1 transition-colors " +
-                                  (row.enabled ? "bg-primary" : "bg-muted")
-                                }
-                                aria-label={row.enabled ? "Disable message" : "Enable message"}
-                              >
-                                <span
-                                  className={
-                                    "block size-6 rounded-full bg-card transition-transform " +
-                                    (row.enabled ? "translate-x-6" : "translate-x-0")
-                                  }
-                                />
-                              </button>
-
-                              <div className="relative">
-                                <Clock className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                                <Input
-                                  type="time"
-                                  value={row.time}
-                                  onChange={(e) => updateScheduleRow(day.key, index, { time: e.target.value })}
-                                  className="rounded-2xl bg-card pl-9"
-                                  disabled={!row.enabled}
-                                />
+                          <div
+                            key={`${day.key}-${index}`}
+                            className="flex flex-wrap items-center gap-2 rounded-2xl bg-card px-3 py-2"
+                          >
+                            <span className="text-sm font-semibold text-muted-foreground">send message for</span>
+                            <details
+                              className={
+                                "group relative " +
+                                (copyScheduleToEveryDay && day.key !== "monday" ? "pointer-events-none opacity-40" : "")
+                              }
+                            >
+                              <summary className="inline-flex min-h-10 max-w-full cursor-pointer list-none items-center gap-2 rounded-xl bg-cream px-3 text-left text-sm font-bold text-foreground">
+                                <span className="max-w-52 truncate">{mealSelectionLabel(row.meals as MealSlot[])}</span>
+                                <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+                              </summary>
+                              <div className="absolute left-0 z-20 mt-2 w-48 rounded-xl border border-border bg-card p-2 shadow-lg">
+                                {SLOT_ORDER.map((slot) => (
+                                  <label
+                                    key={slot}
+                                    className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-sm font-semibold hover:bg-cream"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={row.meals.includes(slot)}
+                                      onChange={() => toggleScheduleMeal(day.key, index, slot)}
+                                      className="size-4 accent-primary"
+                                    />
+                                    {SLOT_LABEL[slot]}
+                                  </label>
+                                ))}
                               </div>
-
+                            </details>
+                            <span className="text-sm font-semibold text-muted-foreground">at</span>
+                            <Input
+                              type="time"
+                              value={row.time}
+                              onChange={(e) => updateScheduleRow(day.key, index, { time: e.target.value })}
+                              disabled={copyScheduleToEveryDay && day.key !== "monday"}
+                              className="h-10 w-32 rounded-xl bg-cream"
+                            />
+                            <div className="ml-auto flex items-center gap-1">
+                              <button
+                                onClick={() => addScheduleRow(day.key)}
+                                disabled={copyScheduleToEveryDay && day.key !== "monday"}
+                                className="grid size-9 place-items-center rounded-xl bg-cream text-foreground disabled:opacity-40"
+                                aria-label={`Add ${day.label} message`}
+                              >
+                                <Plus className="size-4" />
+                              </button>
                               <button
                                 onClick={() => removeScheduleRow(day.key, index)}
-                                className="grid size-10 place-items-center rounded-xl bg-card text-muted-foreground"
+                                disabled={copyScheduleToEveryDay && day.key !== "monday"}
+                                className="grid size-9 place-items-center rounded-xl bg-cream text-muted-foreground disabled:opacity-40"
                                 aria-label={`Delete ${day.label} message`}
                               >
                                 <Trash2 className="size-4" />
                               </button>
                             </div>
-
-                            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                              {SLOT_ORDER.map((slot) => {
-                                const selected = row.meals.includes(slot);
-                                return (
-                                  <button
-                                    key={slot}
-                                    onClick={() => toggleScheduleMeal(day.key, index, slot)}
-                                    disabled={!row.enabled}
-                                    className={
-                                      "rounded-xl border px-3 py-2 text-xs font-bold " +
-                                      (selected
-                                        ? "border-primary bg-primary text-primary-foreground"
-                                        : "border-border bg-card text-muted-foreground")
-                                    }
-                                  >
-                                    {SLOT_LABEL[slot]}
-                                  </button>
-                                );
-                              })}
-                            </div>
-
-                            <Textarea
-                              value={row.message}
-                              onChange={(e) => updateScheduleRow(day.key, index, { message: e.target.value })}
-                              placeholder="Optional message, e.g. prep the dal first and keep rotis for 1 PM"
-                              className="mt-3 min-h-20 rounded-2xl bg-card"
-                              disabled={!row.enabled}
-                            />
                           </div>
                         ))}
                       </div>

@@ -15,6 +15,7 @@ type AuthResult = { error: string | null; needsConfirmation?: boolean };
 type Ctx = {
   session: Session | null;
   loading: boolean;
+  signInWithGoogle: () => Promise<AuthResult>;
   signInWithPassword: (email: string, password: string) => Promise<AuthResult>;
   signUpWithPassword: (email: string, password: string) => Promise<AuthResult>;
   signOut: () => Promise<void>;
@@ -38,9 +39,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then(({ data }) => setSession(data.session))
       .finally(() => setLoading(false));
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, newSession) => {
       setSession(newSession);
       setLoading(false);
+      if (event === "SIGNED_IN" && newSession) {
+        sendWelcomeEmail().catch((error) => console.warn("ahaar welcome email failed", error));
+      }
     });
 
     return () => listener.subscription.unsubscribe();
@@ -56,6 +60,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(data.session);
       sendWelcomeEmail().catch((error) => console.warn("ahaar welcome email failed", error));
     }
+    return { error: error?.message ?? null };
+  };
+
+  const signInWithGoogle = async () => {
+    if (DEMO_MODE) return { error: null };
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
     return { error: error?.message ?? null };
   };
 
@@ -81,7 +96,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ session, loading, signInWithPassword, signUpWithPassword, signOut }}>
+    <AuthContext.Provider
+      value={{ session, loading, signInWithGoogle, signInWithPassword, signUpWithPassword, signOut }}
+    >
       {children}
     </AuthContext.Provider>
   );
