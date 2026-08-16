@@ -48,6 +48,7 @@ function Planner() {
   } = usePlanner();
   const [swapping, setSwapping] = useState<string | null>(null);
   const [notifying, setNotifying] = useState(false);
+  const [generateProgress, setGenerateProgress] = useState(0);
 
   if (loadingHousehold) {
     return (
