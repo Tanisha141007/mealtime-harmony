@@ -42,7 +42,7 @@ function Planner() {
     swap,
     nextMeal,
     prefs,
-    scaled,
+    scaledNutrition,
     generateWeek,
     generatingWeek,
   } = usePlanner();
@@ -181,18 +181,27 @@ function Planner() {
                   {hero.region} · {hero.minutes} min · {prefs.household} servings
                 </p>
                 <div className="mt-3 flex flex-wrap gap-1.5">
-                  {scaled(hero)
-                    .slice(0, 4)
-                    .map((ing) => (
-                      <span
-                        key={ing.name}
-                        className="rounded-full bg-primary-foreground/18 px-2.5 py-1 text-xs font-semibold"
-                      >
-                        {ing.name} {ing.qty}
-                        {ing.unit}
-                      </span>
-                    ))}
+                  {(() => {
+                    const n = scaledNutrition(hero);
+                    return (
+                      <>
+                        <span className="rounded-full bg-primary-foreground/18 px-2.5 py-1 text-xs font-semibold">
+                          Protein {n.protein}g
+                        </span>
+                        <span className="rounded-full bg-primary-foreground/18 px-2.5 py-1 text-xs font-semibold">
+                          Carbs {n.carbs}g
+                        </span>
+                        <span className="rounded-full bg-primary-foreground/18 px-2.5 py-1 text-xs font-semibold">
+                          Fat {n.fat}g
+                        </span>
+                        <span className="rounded-full bg-primary-foreground/18 px-2.5 py-1 text-xs font-semibold">
+                          {n.calories} kcal
+                        </span>
+                      </>
+                    );
+                  })()}
                 </div>
+                <p className="mt-1.5 text-[11px] font-medium opacity-70">Estimated, for {prefs.household} servings</p>
               </div>
               <DishArt
                 art={hero.art}

@@ -44,6 +44,8 @@ export type ApiCategory = "protein" | "carb" | "vegetable" | "mixed";
 export type ApiSeason = "summer" | "monsoon" | "winter" | "all";
 export type ApiArt = "curry" | "dosa" | "thali" | "chai";
 
+export type ApiNutrition = { protein: number; carbs: number; fat: number; calories: number };
+
 export type ApiRecipe = {
   id: string;
   name: string;
@@ -55,6 +57,9 @@ export type ApiRecipe = {
   minutes: number;
   art: ApiArt;
   ingredients: { name: string; qty: number; unit: string }[];
+  // Per-serving estimate (app/nutrition.py - keyword-matched against
+  // standard per-100g values, not a real nutrition database).
+  nutrition: ApiNutrition;
 };
 
 export type ApiHousehold = {
