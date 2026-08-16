@@ -539,7 +539,7 @@ function EditHousehold() {
           ) : (
             <>
               <p className="text-sm text-muted-foreground">
-                {prefs.cookName || "Your cook"} hasn't linked this household yet. They can open{" "}
+                They can open Telegram and send this code to{" "}
                 <a
                   href="https://t.me/ahaara_bot"
                   target="_blank"
@@ -547,8 +547,7 @@ function EditHousehold() {
                   className="font-bold text-primary underline underline-offset-2"
                 >
                   @ahaara_bot
-                </a>{" "}
-                and send this code in the same bot chat they use for other homes:
+                </a>
               </p>
               <div className="mt-3 flex items-center justify-between rounded-2xl bg-cream px-4 py-3">
                 <span className="font-display text-2xl font-bold tracking-widest">{prefs.linkCode}</span>

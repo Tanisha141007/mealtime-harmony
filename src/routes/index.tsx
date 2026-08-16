@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { BellRing, CheckCircle2, Sparkles, Users } from "lucide-react";
+import { BellRing, CheckCircle2, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { AhaarMark } from "@/components/AhaarLogo";
 import { MealCard } from "@/components/MealCard";
 import { DishArt } from "@/components/DishArt";
 import { Progress } from "@/components/ui/progress";
@@ -166,9 +167,7 @@ function Planner() {
           <p className="text-sm font-semibold text-primary">Good day</p>
           <h1 className="mt-0.5 text-3xl leading-tight">This week's table</h1>
         </div>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-bold text-secondary-foreground">
-          <Users className="size-3.5" /> {prefs.household}
-        </span>
+        <AhaarMark className="hidden size-11 drop-shadow-[0_8px_18px_oklch(0.29_0.045_52/0.14)] sm:block" />
       </header>
 
       {!hero || !day ? (

@@ -1,4 +1,4 @@
-import { AhaarWordmark } from "@/components/AhaarLogo";
+import { AhaarMark, AhaarWordmark } from "@/components/AhaarLogo";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { CalendarHeart, Compass, LogOut, SlidersHorizontal } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
@@ -33,16 +33,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background sm:flex">
-      {/* Mobile: the left rail below is hidden entirely (sm:flex), so this
-          is the only way to sign out below the sm breakpoint. Floating
-          top-right to stay clear of the bottom tab bar. */}
-      <button
-        onClick={handleSignOut}
-        aria-label="Sign out"
-        className="fixed right-4 top-4 z-40 grid size-10 place-items-center rounded-full border border-border bg-card/95 text-muted-foreground shadow-[0_8px_24px_-12px_oklch(0.29_0.045_52/0.55)] backdrop-blur sm:hidden"
-      >
-        <LogOut className="size-5" />
-      </button>
+      <AhaarMark className="fixed right-4 top-4 z-40 size-10 drop-shadow-[0_8px_18px_oklch(0.29_0.045_52/0.18)] sm:hidden" />
 
       {/* Wide screens: left rail */}
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col gap-2 border-r border-border bg-cream px-4 py-8 sm:flex">
