@@ -1,26 +1,42 @@
-import { AhaarWordmark } from "@/components/AhaarLogo";
+import { AhaarMark } from "@/components/AhaarLogo";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Lock, LogIn, Mail, UserPlus } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
-    meta: [{ title: "Sign in — ahaar" }],
+    meta: [{ title: "Sign in - ahaar" }],
   }),
   component: Login,
 });
 
-function Login() {
-  const { loading, session, signInWithPassword, signUpWithPassword } = useAuth();
-  const navigate = useNavigate();
+function GoogleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="size-5">
+      <path
+        fill="#4285F4"
+        d="M21.6 12.23c0-.76-.07-1.49-.2-2.18H12v4.12h5.38a4.6 4.6 0 0 1-2 3.02v2.52h3.24c1.9-1.75 2.98-4.33 2.98-7.48Z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 22c2.7 0 4.96-.9 6.62-2.29l-3.24-2.52c-.9.6-2.04.96-3.38.96-2.6 0-4.8-1.76-5.59-4.12H3.07v2.6A10 10 0 0 0 12 22Z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M6.41 14.03A6 6 0 0 1 6.1 12c0-.7.11-1.39.31-2.03v-2.6H3.07A10 10 0 0 0 2 12c0 1.61.39 3.14 1.07 4.63l3.34-2.6Z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 5.85c1.47 0 2.8.51 3.84 1.5l2.86-2.86A9.62 9.62 0 0 0 12 2a10 10 0 0 0-8.93 5.37l3.34 2.6C7.21 7.61 9.4 5.85 12 5.85Z"
+      />
+    </svg>
+  );
+}
 
-  const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+function Login() {
+  const { loading, session, signInWithGoogle } = useAuth();
+  const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -30,40 +46,13 @@ function Login() {
   }, [loading, navigate, session]);
 
   const submit = async () => {
-    const trimmedEmail = email.trim();
-    if (!trimmedEmail || !password) return;
-    if (mode === "sign-up" && password.length < 6) {
-      toast.error("Use a longer password", { description: "Passwords need at least 6 characters." });
-      return;
-    }
-
     setBusy(true);
-    const result =
-      mode === "sign-in"
-        ? await signInWithPassword(trimmedEmail, password)
-        : await signUpWithPassword(trimmedEmail, password);
+    const result = await signInWithGoogle();
     setBusy(false);
 
     if (result.error) {
-      toast.error(mode === "sign-in" ? "Couldn't sign in" : "Couldn't create account", {
-        description: result.error,
-      });
-      return;
+      toast.error("Couldn't sign in with Google", { description: result.error });
     }
-
-    if (mode === "sign-up" && result.needsConfirmation) {
-      toast.success("Account created", {
-        description: "Confirm your email if Supabase asks for it, then sign in here.",
-      });
-      setMode("sign-in");
-      setPassword("");
-      return;
-    }
-
-    if (mode === "sign-up") {
-      toast.success("Account created", { description: "You're signed in and ready to plan." });
-    }
-    navigate({ to: "/", replace: true });
   };
 
   if (loading || session) {
@@ -71,73 +60,20 @@ function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-5">
-      <div className="soft-card w-full max-w-sm p-6">
-        <AhaarWordmark className="mb-5" />
-
-        <Tabs value={mode} onValueChange={(value) => setMode(value as "sign-in" | "sign-up")}>
-          <TabsList className="mb-5 grid w-full grid-cols-2 rounded-2xl bg-cream">
-            <TabsTrigger value="sign-in" className="rounded-xl">
-              Sign in
-            </TabsTrigger>
-            <TabsTrigger value="sign-up" className="rounded-xl">
-              Sign up
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        <h1 className="text-2xl leading-tight">
-          {mode === "sign-in" ? "Welcome back" : "Create your account"}
-        </h1>
-        <p className="mt-1 mb-5 text-sm text-muted-foreground">
-          {mode === "sign-in"
-            ? "Sign in with your email and password."
-            : "Start planning meals with an email and password."}
-        </p>
-
-        <label className="text-sm font-bold" htmlFor="email">
-          Email address
-        </label>
-        <div className="relative mt-1.5">
-          <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            id="email"
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            className="rounded-2xl bg-cream pl-9"
-            onKeyDown={(e) => e.key === "Enter" && submit()}
-          />
-        </div>
-
-        <label className="mt-4 block text-sm font-bold" htmlFor="password">
-          Password
-        </label>
-        <div className="relative mt-1.5">
-          <Lock className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            id="password"
-            type="password"
-            autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder={mode === "sign-in" ? "Your password" : "At least 6 characters"}
-            className="rounded-2xl bg-cream pl-9"
-            onKeyDown={(e) => e.key === "Enter" && submit()}
-          />
-        </div>
+    <main className="grid min-h-screen place-items-center bg-background px-5">
+      <section className="flex w-full max-w-sm flex-col items-center text-center">
+        <AhaarMark className="size-20" />
+        <h1 className="font-display mt-4 text-5xl font-bold lowercase leading-none text-foreground">ahaar</h1>
 
         <button
           onClick={submit}
-          disabled={busy || !email.trim() || !password}
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-60"
+          disabled={busy}
+          className="mt-8 inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-2xl border border-border bg-card px-4 text-sm font-bold text-foreground shadow-sm transition-colors hover:bg-cream disabled:opacity-60"
         >
-          {mode === "sign-in" ? <LogIn className="size-4" /> : <UserPlus className="size-4" />}
-          {busy ? "Working..." : mode === "sign-in" ? "Sign in" : "Create account"}
+          <GoogleIcon />
+          {busy ? "Opening Google..." : "Sign in with Google"}
         </button>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
