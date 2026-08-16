@@ -22,6 +22,7 @@ import {
   type HouseholdInput,
 } from "./api";
 import { useAuth } from "./auth";
+import { DEMO_MODE, demoPrefs, demoSwapRecipe, demoWeek } from "./demo";
 import { SLOT_ORDER, type MealSlot } from "./recipes";
 
 export type Recipe = ApiRecipe;
@@ -41,6 +42,9 @@ export type Prefs = {
   cookPhone: string;
   channel: "whatsapp" | "sms";
   leadHours: number;
+  notifyMe: boolean;
+  notifyMeals: MealSlot[];
+  sendTime: string;
   notes: string;
   linkCode: string;
   cookLinked: boolean;
@@ -59,6 +63,9 @@ const DEFAULT_PREFS: Prefs = {
   cookPhone: "",
   channel: "sms",
   leadHours: 12,
+  notifyMe: false,
+  notifyMeals: ["lunch", "snack", "dinner"],
+  sendTime: "07:00",
   notes: "",
   linkCode: "",
   cookLinked: false,
@@ -80,6 +87,9 @@ function apiHouseholdToPrefs(h: ApiHousehold): Prefs {
     cookPhone: h.cookPhone,
     channel: h.channel,
     leadHours: h.leadHours,
+    notifyMe: h.notifyMe,
+    notifyMeals: h.notifyMeals as MealSlot[],
+    sendTime: h.sendTime,
     notes: h.notes,
     linkCode: h.linkCode,
     cookLinked: h.cookLinked,
@@ -99,6 +109,9 @@ function prefsToHouseholdInput(p: Partial<Prefs>): Partial<HouseholdInput> {
   if (p.cookPhone !== undefined) out.cook_phone = p.cookPhone;
   if (p.channel !== undefined) out.preferred_channel = p.channel;
   if (p.leadHours !== undefined) out.lead_hours = p.leadHours;
+  if (p.notifyMe !== undefined) out.notify_me = p.notifyMe;
+  if (p.notifyMeals !== undefined) out.notify_meals = p.notifyMeals;
+  if (p.sendTime !== undefined) out.send_time = p.sendTime;
   if (p.notes !== undefined) out.notes = p.notes;
   return out;
 }
@@ -135,30 +148,34 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const todayKey = useMemo(() => toKey(new Date()), []);
   const [selected, setSelected] = useState(todayKey);
+  const [demoPrefsState, setDemoPrefsState] = useState<Prefs>(demoPrefs);
+  const [demoWeekState, setDemoWeekState] = useState<DayPlan[]>(demoWeek);
 
-  const isAuthed = !!session;
+  const isAuthed = DEMO_MODE || !!session;
 
   const householdQuery = useQuery({
     queryKey: ["household", "me"],
     queryFn: getMyHousehold,
-    enabled: isAuthed,
+    enabled: isAuthed && !DEMO_MODE,
     retry: (failureCount, error) => (error instanceof ApiError && error.status === 404 ? false : failureCount < 2),
   });
 
-  const hasHousehold = householdQuery.isSuccess && !!householdQuery.data;
+  const hasHousehold = DEMO_MODE || (householdQuery.isSuccess && !!householdQuery.data);
   const household = householdQuery.data ?? null;
-  const householdId = household?.id ?? null;
-  const prefs = household ? apiHouseholdToPrefs(household) : DEFAULT_PREFS;
+  const householdId = DEMO_MODE ? 1 : household?.id ?? null;
+  const prefs = DEMO_MODE ? demoPrefsState : household ? apiHouseholdToPrefs(household) : DEFAULT_PREFS;
 
   const weekQuery = useQuery({
     queryKey: ["week", householdId],
     queryFn: () => getWeek(householdId as number),
-    enabled: !!householdId,
+    enabled: !!householdId && !DEMO_MODE,
   });
-  const week: DayPlan[] = (weekQuery.data ?? []).map((d: ApiDayPlan) => ({
-    date: d.date,
-    meals: d.meals.map((m) => ({ slot: m.slot as MealSlot, recipeId: m.recipeId, recipe: m.recipe })),
-  }));
+  const week: DayPlan[] = DEMO_MODE
+    ? demoWeekState
+    : (weekQuery.data ?? []).map((d: ApiDayPlan) => ({
+        date: d.date,
+        meals: d.meals.map((m) => ({ slot: m.slot as MealSlot, recipeId: m.recipeId, recipe: m.recipe })),
+      }));
 
   const invalidateWeek = () => queryClient.invalidateQueries({ queryKey: ["week", householdId] });
 
@@ -179,6 +196,10 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   });
   const setPrefs = useCallback(
     (patch: Partial<Prefs>) => {
+      if (DEMO_MODE) {
+        setDemoPrefsState((current) => ({ ...current, ...patch }));
+        return;
+      }
       if (!householdId) return;
       updateMutation.mutate(patch);
     },
@@ -190,6 +211,10 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     onSuccess: (days) => queryClient.setQueryData(["week", householdId], days),
   });
   const generateWeek = useCallback(async () => {
+    if (DEMO_MODE) {
+      setDemoWeekState(demoWeek);
+      return;
+    }
     if (!householdId) return;
     await generateMutation.mutateAsync();
   }, [householdId, generateMutation]);
@@ -201,10 +226,27 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   });
   const assign = useCallback(
     async (date: string, slot: MealSlot, recipeId: string) => {
+      if (DEMO_MODE) {
+        const recipe = demoWeekState.flatMap((day) => day.meals).find((meal) => meal.recipeId === recipeId)?.recipe;
+        if (!recipe) return;
+        setDemoWeekState((days) =>
+          days.map((day) =>
+            day.date === date
+              ? {
+                  ...day,
+                  meals: day.meals.map((meal) =>
+                    meal.slot === slot ? { slot, recipeId: recipe.id, recipe } : meal,
+                  ),
+                }
+              : day,
+          ),
+        );
+        return;
+      }
       if (!householdId) return;
       await assignMutation.mutateAsync({ date, slot, recipeId });
     },
-    [householdId, assignMutation],
+    [householdId, assignMutation, demoWeekState],
   );
 
   const swapMutation = useMutation({
@@ -213,6 +255,22 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   });
   const swap = useCallback(
     async (date: string, slot: MealSlot) => {
+      if (DEMO_MODE) {
+        const recipe = demoSwapRecipe(slot);
+        setDemoWeekState((days) =>
+          days.map((day) =>
+            day.date === date
+              ? {
+                  ...day,
+                  meals: day.meals.map((meal) =>
+                    meal.slot === slot ? { slot, recipeId: recipe.id, recipe } : meal,
+                  ),
+                }
+              : day,
+          ),
+        );
+        return recipe;
+      }
       if (!householdId) return null;
       const result = await swapMutation.mutateAsync({ date, slot });
       const meal = result.meals.find((m) => m.slot === slot);
@@ -245,14 +303,14 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   const value: Ctx = {
     householdId,
     hasHousehold,
-    loadingHousehold: householdQuery.isLoading,
+    loadingHousehold: DEMO_MODE ? false : householdQuery.isLoading,
     prefs,
     setPrefs,
     createHousehold,
     creatingHousehold: createMutation.isPending,
 
     week,
-    loadingWeek: weekQuery.isLoading,
+    loadingWeek: DEMO_MODE ? false : weekQuery.isLoading,
     today: todayKey,
     selected,
     setSelected,
