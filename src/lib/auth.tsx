@@ -7,50 +7,74 @@ import {
 } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
+import { DEMO_MODE } from "./demo";
+
+type AuthResult = { error: string | null; needsConfirmation?: boolean };
 
 type Ctx = {
   session: Session | null;
   loading: boolean;
-  sendMagicLink: (email: string) => Promise<{ error: string | null }>;
+  signInWithPassword: (email: string, password: string) => Promise<AuthResult>;
+  signUpWithPassword: (email: string, password: string) => Promise<AuthResult>;
   signOut: () => Promise<void>;
 };
 
 const AuthContext = createContext<Ctx | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const demoSession = {
+    access_token: "demo-access-token",
+    token_type: "bearer",
+    user: { id: "demo-user", email: "demo@example.com" },
+  } as Session;
+  const [session, setSession] = useState<Session | null>(DEMO_MODE ? demoSession : null);
+  const [loading, setLoading] = useState(!DEMO_MODE);
 
   useEffect(() => {
-    // Picks up a session already in the URL (the magic-link redirect lands
-    // back here with auth tokens in the hash) automatically - default
-    // supabase-js behavior, no extra callback route needed.
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setLoading(false);
-    });
+    if (DEMO_MODE) return;
+    supabase.auth
+      .getSession()
+      .then(({ data }) => setSession(data.session))
+      .finally(() => setLoading(false));
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
+      setLoading(false);
     });
 
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  const sendMagicLink = async (email: string) => {
-    const { error } = await supabase.auth.signInWithOtp({
+  const signInWithPassword = async (email: string, password: string) => {
+    if (DEMO_MODE) return { error: null };
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
-      options: { emailRedirectTo: window.location.origin },
+      password,
     });
+    if (data.session) setSession(data.session);
     return { error: error?.message ?? null };
   };
 
+  const signUpWithPassword = async (email: string, password: string) => {
+    if (DEMO_MODE) return { error: null };
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+    if (data.session) setSession(data.session);
+    return { error: error?.message ?? null, needsConfirmation: !data.session };
+  };
+
   const signOut = async () => {
+    if (DEMO_MODE) {
+      setSession(demoSession);
+      return;
+    }
     await supabase.auth.signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ session, loading, sendMagicLink, signOut }}>
+    <AuthContext.Provider value={{ session, loading, signInWithPassword, signUpWithPassword, signOut }}>
       {children}
     </AuthContext.Provider>
   );
