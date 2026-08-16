@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DiscoverRouteImport } from './routes/discover'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as PreferencesRouteImport } from './routes/preferences'
 
 const IndexRoute = IndexRouteImport.update({
@@ -23,6 +24,11 @@ const DiscoverRoute = DiscoverRouteImport.update({
   path: '/discover',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PreferencesRoute = PreferencesRouteImport.update({
   id: '/preferences',
   path: '/preferences',
@@ -32,30 +38,34 @@ const PreferencesRoute = PreferencesRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/discover': typeof DiscoverRoute
+  '/login': typeof LoginRoute
   '/preferences': typeof PreferencesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/discover': typeof DiscoverRoute
+  '/login': typeof LoginRoute
   '/preferences': typeof PreferencesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/discover': typeof DiscoverRoute
+  '/login': typeof LoginRoute
   '/preferences': typeof PreferencesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/discover' | '/preferences'
+  fullPaths: '/' | '/discover' | '/login' | '/preferences'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/discover' | '/preferences'
-  id: '__root__' | '/' | '/discover' | '/preferences'
+  to: '/' | '/discover' | '/login' | '/preferences'
+  id: '__root__' | '/' | '/discover' | '/login' | '/preferences'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DiscoverRoute: typeof DiscoverRoute
+  LoginRoute: typeof LoginRoute
   PreferencesRoute: typeof PreferencesRoute
 }
 
@@ -75,6 +85,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DiscoverRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/preferences': {
       id: '/preferences'
       path: '/preferences'
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DiscoverRoute: DiscoverRoute,
+  LoginRoute: LoginRoute,
   PreferencesRoute: PreferencesRoute,
 }
 export const routeTree = rootRouteImport

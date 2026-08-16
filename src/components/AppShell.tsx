@@ -1,6 +1,7 @@
-import { Link } from "@tanstack/react-router";
-import { CalendarHeart, Compass, SlidersHorizontal } from "lucide-react";
-import type { ReactNode } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { CalendarHeart, Compass, LogOut, SlidersHorizontal } from "lucide-react";
+import { useEffect, type ReactNode } from "react";
+import { useAuth } from "@/lib/auth";
 
 const TABS = [
   { to: "/preferences", label: "Preferences", icon: SlidersHorizontal },
@@ -9,6 +10,21 @@ const TABS = [
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const { session, loading, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && !session) {
+      navigate({ to: "/login" });
+    }
+  }, [loading, session, navigate]);
+
+  if (loading || !session) {
+    // Same background as everywhere else so this doesn't flash - just
+    // renders nothing while we either check the session or redirect.
+    return <div className="min-h-screen bg-background" />;
+  }
+
   return (
     <div className="min-h-screen bg-background sm:flex">
       {/* Wide screens: left rail */}
@@ -31,6 +47,16 @@ export function AppShell({ children }: { children: ReactNode }) {
             {label}
           </Link>
         ))}
+        <button
+          onClick={() => {
+            signOut();
+            navigate({ to: "/login" });
+          }}
+          className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary"
+        >
+          <LogOut className="size-5" />
+          Sign out
+        </button>
         <p className="mt-auto px-3 text-xs leading-relaxed text-muted-foreground">
           Prototype — meals, cook messages and AI replies are simulated.
         </p>
